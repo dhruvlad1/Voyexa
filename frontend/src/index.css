@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #ffffff; /* Base white */
+  
+  /* --- VOYEXA MODERN GRID PATTERN --- */
+  /* This creates a subtle 40px grid with tiny dots at the intersections. 
+     It makes the UI look like a professional planning workspace. */
+  background-image: 
+    radial-gradient(#e5e7eb 1px, transparent 1px), 
+    linear-gradient(to right, #f1f5f9 1px, transparent 1px), 
+    linear-gradient(to bottom, #f1f5f9 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-attachment: fixed;
+}
+
+/* Reusable Glassmorphism Class */
+.glass-effect {
+  @apply bg-white/70 backdrop-blur-lg border border-white/40 shadow-xl;
+}
