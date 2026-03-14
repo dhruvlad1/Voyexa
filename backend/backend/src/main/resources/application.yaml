@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/voyexa?createDatabaseIfNotExist=true
+    username: root
+    password: rishudo
+
+  jpa:
+    show-sql: true
