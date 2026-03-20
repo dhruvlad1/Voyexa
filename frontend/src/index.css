@@ -26,3 +26,11 @@ body {
 .glass-effect {
   @apply bg-white/70 backdrop-blur-lg border border-white/40 shadow-xl;
 }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-transition {
+  animation: slideUp 0.5s ease-out forwards;
+}

@@ -12,7 +12,7 @@ import Dashboard from "./pages/Dashboard";
 function App() {
   return (
     <Router>
-      <div className="min-h-screen">
+      <div className="min-h-screen page-transition">
         <Routes>
           <Route path="/" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />

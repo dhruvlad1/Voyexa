@@ -56,7 +56,7 @@ const CreateTrip = () => {
             <input
               type="text"
               placeholder="e.g. Zurich, Switzerland"
-              className="w-full p-6 bg-white border-2 border-slate-100 rounded-2xl text-xl outline-none focus:border-indigo-600 transition-all font-medium"
+              className="w-full p-6 bg-white/50 border-2 border-slate-100 rounded-2xl text-xl outline-none focus:border-indigo-500 focus:ring-8 focus:ring-indigo-500/5 transition-all duration-300 font-medium"
               onChange={(e) =>
                 setTripConfig({ ...tripConfig, destination: e.target.value })
               }

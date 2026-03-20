@@ -51,7 +51,7 @@ const Dashboard = () => {
           <button className="w-full flex items-center gap-3 px-4 py-3 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-100">
             <TrendingUp size={18} /> Dashboard
           </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 rounded-2xl font-medium">
+          <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50/50 rounded-2xl font-medium transition-all duration-300 hover:translate-x-1">
             <Clock size={18} /> My Trips
           </button>
           <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 rounded-2xl font-medium">
@@ -98,9 +98,11 @@ const Dashboard = () => {
             <span className="px-4 py-1.5 rounded-full bg-indigo-500/20 border border-indigo-400/20 text-indigo-400 text-xs font-bold uppercase tracking-widest mb-6 inline-block">
               Voyexa AI Intelligence
             </span>
-            <h1 className="text-5xl font-black tracking-tight mb-4">
-              Your world, <br />{" "}
-              <span className="text-indigo-400 italic">optimized.</span>
+            <h1 className="text-5xl font-black tracking-tight mb-4 text-white">
+              Your world, <br />
+              <span className="bg-gradient-to-r from-indigo-400 via-blue-400 to-indigo-400 bg-[length:200%_auto] animate-gradient-x bg-clip-text text-transparent italic">
+                optimized.
+              </span>
             </h1>
             <p className="text-slate-400 max-w-md text-lg leading-relaxed font-medium">
               AI-driven itineraries for travelers who value time as much as the
