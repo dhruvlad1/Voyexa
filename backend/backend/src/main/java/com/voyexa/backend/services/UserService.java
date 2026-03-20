@@ -3,31 +3,44 @@ package com.voyexa.backend.services;
 import com.voyexa.backend.DTOS.UserRegistrationDto;
 import com.voyexa.backend.DTOS.UserLoginDto;
 import com.voyexa.backend.entities.User;
+import com.voyexa.backend.exceptions.DuplicateUserException;
 import com.voyexa.backend.repositories.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     public String registerUser(UserRegistrationDto dto) {
-        // Check if user already exists
+        Map<String, String> duplicateErrors = new LinkedHashMap<>();
+
         if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
-            return "User with this email already exists.";
+            duplicateErrors.put("email", "Email is already registered.");
         }
 
-        // Create new user
+        if (userRepository.findByPhoneNumber(dto.getPhone_number()).isPresent()) {
+            duplicateErrors.put("phone_number", "Phone number is already registered.");
+        }
+
+        if (!duplicateErrors.isEmpty()) {
+            throw new DuplicateUserException(duplicateErrors);
+        }
+
         User user = new User();
         user.setName(dto.getName());
         user.setEmail(dto.getEmail());
-        user.setPassword(dto.getPassword());  // In production, hash this!
+        user.setPassword(dto.getPassword());
         user.setPhone_number(dto.getPhone_number());
         user.setCreated_at(LocalDateTime.now());
         user.setUpdated_at(LocalDateTime.now());
@@ -40,7 +53,7 @@ public class UserService {
         Optional<User> userOpt = userRepository.findByEmail(dto.getEmail());
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            if (user.getPassword().equals(dto.getPassword())) {  // In production, compare hashed passwords
+            if (user.getPassword().equals(dto.getPassword())) {
                 return "Login successful.";
             } else {
                 return "Invalid password.";
