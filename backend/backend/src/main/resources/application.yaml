@@ -12,3 +12,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
+geoapify:
+  base-url: https://api.geoapify.com/v1/geocode/autocomplete
+  api-key: 7e9fb89c784640d4878deb402da2367a
+  limit: 10

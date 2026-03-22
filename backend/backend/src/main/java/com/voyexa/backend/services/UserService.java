@@ -26,11 +26,11 @@ public class UserService {
         Map<String, String> duplicateErrors = new LinkedHashMap<>();
 
         if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
-            duplicateErrors.put("email", "Email is already registered.");
+            duplicateErrors.put("email", "Email is already registered please try login.");
         }
 
         if (userRepository.findByPhoneNumber(dto.getPhone_number()).isPresent()) {
-            duplicateErrors.put("phone_number", "Phone number is already registered.");
+            duplicateErrors.put("phone_number", "Phone number is already registered please try login.");
         }
 
         if (!duplicateErrors.isEmpty()) {
