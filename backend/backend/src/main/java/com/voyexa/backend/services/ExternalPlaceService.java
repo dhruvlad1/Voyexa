@@ -1,21 +1,22 @@
 package com.voyexa.backend.services;
 
-import com.voyexa.backend.DTOS.PlaceDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.voyexa.backend.DTOS.PlaceDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.util.UriComponentsBuilder;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.time.Duration;
-import java.net.URI;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class ExternalPlaceService {
@@ -26,116 +27,121 @@ public class ExternalPlaceService {
     private final ObjectMapper objectMapper;
     private final String geoapifyBaseUrl;
     private final String geoapifyApiKey;
-    private final int geoapifyLimit;
 
     public ExternalPlaceService(
             @Value("${geoapify.base-url}") String geoapifyBaseUrl,
-            @Value("${geoapify.api-key}") String geoapifyApiKey,
-            @Value("${geoapify.limit:10}") int geoapifyLimit
+            @Value("${geoapify.api-key}") String geoapifyApiKey
     ) {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout((int) Duration.ofSeconds(5).toMillis());
         requestFactory.setReadTimeout((int) Duration.ofSeconds(10).toMillis());
+
         this.restTemplate = new RestTemplate(requestFactory);
         this.objectMapper = new ObjectMapper();
         this.geoapifyBaseUrl = geoapifyBaseUrl;
         this.geoapifyApiKey = geoapifyApiKey;
-        this.geoapifyLimit = geoapifyLimit;
     }
 
     public List<PlaceDto> searchPlaces(String query) {
-        if (query == null || query.trim().isEmpty() || query.length() < 2) {
+        if (query == null || query.trim().length() < 2) {
             return List.of();
         }
 
         try {
-            URI uri = UriComponentsBuilder
-                    .fromUriString(geoapifyBaseUrl)
-                    .queryParam("text", query.trim())
-                    .queryParam("apiKey", geoapifyApiKey)
-                    .queryParam("limit", geoapifyLimit)
-                    .build(true)
-                    .toUri();
+            // Federated Search: Fetch countries and cities concurrently
+            CompletableFuture<List<PlaceDto>> countriesFuture = CompletableFuture.supplyAsync(() -> 
+                fetchAndParse(query, "country", 2)
+            );
 
-            String response = restTemplate.getForObject(uri, String.class);
-            return parseGeoapifyResponse(response);
+            CompletableFuture<List<PlaceDto>> citiesFuture = CompletableFuture.supplyAsync(() -> 
+                fetchAndParse(query, "city", 4)
+            );
 
-        } catch (RestClientException e) {
-            log.warn("Error calling Geoapify API: {}", e.getMessage());
-            return List.of();
+            // Wait for both to complete and combine results
+            CompletableFuture.allOf(countriesFuture, citiesFuture).join();
+
+            List<PlaceDto> combinedResults = new ArrayList<>();
+            combinedResults.addAll(countriesFuture.get());
+            combinedResults.addAll(citiesFuture.get());
+
+            return combinedResults;
+
         } catch (Exception e) {
             log.error("Unexpected error in searchPlaces", e);
             return List.of();
         }
     }
 
-    private List<PlaceDto> parseGeoapifyResponse(String jsonResponse) {
+    private List<PlaceDto> fetchAndParse(String query, String type, int limit) {
+        try {
+            URI uri = UriComponentsBuilder
+                    .fromUriString(geoapifyBaseUrl)
+                    .queryParam("text", query.trim())
+                    .queryParam("apiKey", geoapifyApiKey)
+                    .queryParam("type", type)
+                    .queryParam("limit", limit)
+                    .build(true)
+                    .toUri();
+
+            String response = restTemplate.getForObject(uri, String.class);
+            return parseGeoapifyResponse(response, type);
+
+        } catch (RestClientException e) {
+            log.warn("Error calling Geoapify API for type {}: {}", type, e.getMessage());
+            return List.of();
+        } catch (Exception e) {
+            log.error("Error fetching/parsing for type " + type, e);
+            return List.of();
+        }
+    }
+
+    private List<PlaceDto> parseGeoapifyResponse(String jsonResponse, String requestType) {
         List<PlaceDto> results = new ArrayList<>();
-        if (!hasText(jsonResponse)) {
+
+        if (jsonResponse == null || jsonResponse.trim().isEmpty()) {
             return results;
         }
 
         try {
             JsonNode features = objectMapper.readTree(jsonResponse).path("features");
-
             if (!features.isArray()) {
                 return results;
             }
 
             for (JsonNode feature : features) {
                 JsonNode properties = feature.path("properties");
-                String placeName = resolvePlaceName(properties);
-                String country = properties.path("country").asText("").trim();
-                String region = firstNonBlank(
-                        properties.path("state").asText(""),
-                        properties.path("region").asText(""),
-                        properties.path("county").asText("")
-                );
-                String description = firstNonBlank(
-                        properties.path("formatted").asText(""),
-                        properties.path("address_line2").asText(""),
-                        properties.path("address_line1").asText("")
-                );
+                
+                String country = properties.path("country").asText(null);
+                String displayString;
+                
+                if ("country".equals(requestType)) {
+                    // For countries, just use the country name. Fallback to properties.name if country is missing.
+                    displayString = country != null ? country : properties.path("name").asText("");
+                } else {
+                    // For cities, use City, Country. Fallback to name if city is missing.
+                    String city = properties.path("city").asText(null);
+                    String primaryName = city != null ? city : properties.path("name").asText("");
+                    
+                    if (country != null && !country.isEmpty() && primaryName != null && !primaryName.isEmpty()) {
+                        displayString = primaryName + ", " + country;
+                    } else {
+                         displayString = primaryName; // Fallback if country is missing
+                    }
+                }
 
-                if (hasText(placeName) && hasText(country)) {
-                    PlaceDto dto = new PlaceDto(
-                            0,
-                            placeName,
-                            country,
-                            region,
-                            description
-                    );
+                if (displayString != null && !displayString.trim().isEmpty()) {
+                    PlaceDto dto = new PlaceDto();
+                    dto.setDescription(displayString); // Storing the clean string in description as requested
+                    dto.setName(properties.path("name").asText(""));
+                    dto.setCountry(country);
                     results.add(dto);
                 }
             }
+            return results;
+
         } catch (Exception e) {
             log.warn("Error parsing Geoapify response: {}", e.getMessage());
+            return List.of();
         }
-
-        return results;
-    }
-
-    private String resolvePlaceName(JsonNode properties) {
-        return firstNonBlank(
-                properties.path("city").asText(""),
-                properties.path("town").asText(""),
-                properties.path("village").asText(""),
-                properties.path("suburb").asText(""),
-                properties.path("name").asText(""),
-                properties.path("formatted").asText("")
-        );
-    }
-
-    private String firstNonBlank(String... values) {
-        for (String value : values) {
-            if (hasText(value)) {
-                return value.trim();
-            }
-        }
-        return "";
-    }
-
-    private boolean hasText(String value) {
-        return value != null && !value.trim().isEmpty();
     }
 }
