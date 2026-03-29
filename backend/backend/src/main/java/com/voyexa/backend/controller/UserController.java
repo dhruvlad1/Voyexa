@@ -1,5 +1,6 @@
 package com.voyexa.backend.controller;
 
+import com.voyexa.backend.DTOS.UserLoginResponseDto;
 import com.voyexa.backend.DTOS.UserRegistrationDto;
 import com.voyexa.backend.DTOS.UserLoginDto;
 import com.voyexa.backend.entities.User;
@@ -27,15 +28,10 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody UserLoginDto dto) {
-        String message = userService.loginUser(dto);
-        if ("Login successful.".equals(message)) {
-            return ResponseEntity.ok(message);
-        } else {
-            return ResponseEntity.badRequest().body(message);
-        }
+    public ResponseEntity<UserLoginResponseDto> login(@RequestBody UserLoginDto dto) {
+        UserLoginResponseDto response = userService.loginUser(dto);
+        return ResponseEntity.ok(response);
     }
-
 
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {

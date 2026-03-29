@@ -26,5 +26,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleDuplicateUser(DuplicateUserException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getFieldErrors());
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
 }
 

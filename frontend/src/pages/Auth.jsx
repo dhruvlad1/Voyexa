@@ -54,22 +54,38 @@ const Auth = () => {
         body: JSON.stringify(payload),
       });
 
-      const text = await response.text();
+      if (isLogin) {
+        const contentType = response.headers.get("content-type") || "";
+        const data = contentType.includes("application/json")
+          ? await response.json()
+          : { message: await response.text() };
 
-      if (response.ok) {
-        setSuccess(text);
-        if (isLogin) {
+        if (response.ok) {
+          if (data?.userId !== undefined && data?.userId !== null) {
+            localStorage.setItem("voyexa_user_id", String(data.userId));
+          }
+          if (data?.name) {
+            localStorage.setItem("voyexa_user_name", data.name);
+          }
+          setSuccess(data?.message || "Login successful.");
           setTimeout(() => navigate("/dashboard"), 1200);
         } else {
+          setError(data?.message || "Login failed.");
+        }
+      } else {
+        const text = await response.text();
+
+        if (response.ok) {
+          setSuccess(text);
           setTimeout(() => {
             setIsLogin(true);
             setSuccess("");
             setName("");
             setPhoneNumber("");
           }, 2000);
+        } else {
+          setError(text);
         }
-      } else {
-        setError(text);
       }
     } catch (err) {
       setError("Network error: Is the backend running?");

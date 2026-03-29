@@ -168,6 +168,8 @@ const LocationAutocomplete = ({
 const CreateTrip = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveError, setSaveError] = useState("");
 
     const [tripConfig, setTripConfig] = useState({
         origin: "",
@@ -176,7 +178,6 @@ const CreateTrip = () => {
         endDate: "",
         dateFlexibility: "Exact dates",
         travelers: "Solo",
-        coupleCount: 1,
         adultCount: 2,
         childCount: 0,
         interests: [],
@@ -243,7 +244,7 @@ const CreateTrip = () => {
 
     const getTotalTravelers = () => {
         if (tripConfig.travelers === "Solo") return 1;
-        if (tripConfig.travelers === "Couple") return tripConfig.coupleCount * 2;
+        if (tripConfig.travelers === "Couple") return 2;
         return tripConfig.adultCount + tripConfig.childCount;
     };
 
@@ -251,6 +252,69 @@ const CreateTrip = () => {
         tripConfig.interests.length > 0 &&
         (!tripConfig.interests.includes("Others") ||
             tripConfig.otherInterest.trim().length > 0);
+
+    const handleBuildItinerary = async () => {
+        setSaveError("");
+
+        const storedUserId = localStorage.getItem("voyexa_user_id");
+        if (!storedUserId) {
+            setSaveError("Please login again. Missing user session.");
+            return;
+        }
+
+        let adultCount = tripConfig.adultCount;
+        let childCount = tripConfig.childCount;
+
+        if (tripConfig.travelers === "Solo") {
+            adultCount = 1;
+            childCount = 0;
+        } else if (tripConfig.travelers === "Couple") {
+            adultCount = 2;
+            childCount = 0;
+        }
+
+        const payload = {
+            userId: Number(storedUserId),
+            origin: tripConfig.origin,
+            destination: tripConfig.destination,
+            startDate: tripConfig.startDate,
+            endDate: tripConfig.endDate,
+            dateFlexibility: tripConfig.dateFlexibility,
+            travelers: tripConfig.travelers,
+            adultCount,
+            childCount,
+            interests: tripConfig.interests,
+            otherInterest: tripConfig.otherInterest,
+            accommodationPreference: tripConfig.accommodationPreference,
+            tripPace: tripConfig.tripPace,
+            budget: tripConfig.budget
+        };
+
+        setIsSaving(true);
+        try {
+            const response = await fetch("http://localhost:8080/api/trips", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const contentType = response.headers.get("content-type") || "";
+            const data = contentType.includes("application/json")
+                ? await response.json()
+                : { message: await response.text() };
+
+            if (!response.ok) {
+                setSaveError(data?.message || "Failed to save trip.");
+                return;
+            }
+
+            navigate("/dashboard");
+        } catch (e) {
+            setSaveError("Network error: unable to save trip.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     return (
         <div className="min-h-screen flex flex-col items-center py-16 px-6 relative overflow-hidden bg-transparent">
@@ -376,15 +440,8 @@ const CreateTrip = () => {
                                         key={opt.id}
                                         onClick={() =>
                                             setTripConfig((prev) => {
-                                                if (opt.id === "Solo") {
-                                                    return { ...prev, travelers: "Solo" };
-                                                }
-                                                if (opt.id === "Couple") {
-                                                    return {
-                                                        ...prev,
-                                                        travelers: "Couple",
-                                                        coupleCount: Math.max(prev.coupleCount, 1)
-                                                    };
+                                                if (opt.id === "Solo" || opt.id === "Couple") {
+                                                    return { ...prev, travelers: opt.id };
                                                 }
                                                 return {
                                                     ...prev,
@@ -406,31 +463,16 @@ const CreateTrip = () => {
                             </div>
                         </div>
 
-                        {tripConfig.travelers === "Couple" && (
-                            <div className="animate-in fade-in zoom-in duration-300 p-6 bg-white/5 border border-white/10 rounded-2xl mb-6 flex items-center justify-between">
-                                <div>
-                                    <h4 className="text-white font-bold">Number of Couples</h4>
-                                    <p className="text-xs text-slate-500">
-                                        Each couple counts as 2 travelers
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-6">
-                                    <button
-                                        onClick={() => updateCounter("coupleCount", -1, 1, 10)}
-                                        className="p-2 bg-white/10 text-white rounded-lg hover:bg-indigo-600 transition-all"
-                                    >
-                                        <Minus size={18} />
-                                    </button>
-                                    <span className="text-2xl font-black text-white w-8 text-center">
-                    {tripConfig.coupleCount}
-                  </span>
-                                    <button
-                                        onClick={() => updateCounter("coupleCount", 1, 1, 10)}
-                                        className="p-2 bg-white/10 text-white rounded-lg hover:bg-indigo-600 transition-all"
-                                    >
-                                        <Plus size={18} />
-                                    </button>
-                                </div>
+                        {(tripConfig.travelers === "Solo" ||
+                            tripConfig.travelers === "Couple") && (
+                            <div className="animate-in fade-in zoom-in duration-300 p-6 bg-white/5 border border-white/10 rounded-2xl mb-6">
+                                <h4 className="text-white font-bold mb-1">Traveler Count</h4>
+                                <p className="text-indigo-300 font-semibold">
+                                    {tripConfig.travelers === "Solo" ? "1 traveler" : "2 travelers"}
+                                </p>
+                                <p className="text-xs text-slate-500 mt-1">
+                                    Count is fixed for this selection.
+                                </p>
                             </div>
                         )}
 
@@ -684,6 +726,12 @@ const CreateTrip = () => {
                             ))}
                         </div>
 
+                        {saveError && (
+                            <div className="w-full mb-4 text-red-200 bg-red-900/30 p-3 rounded-xl text-xs font-bold border border-red-500/20">
+                                {saveError}
+                            </div>
+                        )}
+
                         <div className="flex gap-4 mt-12">
                             <button
                                 onClick={() => setStep(5)}
@@ -691,8 +739,12 @@ const CreateTrip = () => {
                             >
                                 Back
                             </button>
-                            <button className="flex-[2] bg-indigo-600 text-white py-6 rounded-2xl font-black text-xl flex items-center justify-center gap-3 hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-500/40">
-                                <Sparkles size={24} /> BUILD ITINERARY
+                            <button
+                                onClick={handleBuildItinerary}
+                                disabled={isSaving}
+                                className="flex-[2] bg-indigo-600 text-white py-6 rounded-2xl font-black text-xl flex items-center justify-center gap-3 hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-500/40 disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                                <Sparkles size={24} /> {isSaving ? "SAVING..." : "BUILD ITINERARY"}
                             </button>
                         </div>
                     </div>

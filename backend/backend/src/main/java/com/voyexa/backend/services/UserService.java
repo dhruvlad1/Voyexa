@@ -1,5 +1,6 @@
 package com.voyexa.backend.services;
 
+import com.voyexa.backend.DTOS.UserLoginResponseDto;
 import com.voyexa.backend.DTOS.UserRegistrationDto;
 import com.voyexa.backend.DTOS.UserLoginDto;
 import com.voyexa.backend.entities.User;
@@ -49,19 +50,18 @@ public class UserService {
         return "User registered successfully.";
     }
 
-    public String loginUser(UserLoginDto dto) {
+    public UserLoginResponseDto loginUser(UserLoginDto dto) {
         Optional<User> userOpt = userRepository.findByEmail(dto.getEmail());
         if (userOpt.isPresent()) {
             User user = userOpt.get();
             if (user.getPassword().equals(dto.getPassword())) {
-                return "Login successful.";
-            } else {
-                return "Invalid password.";
+                return new UserLoginResponseDto(user.getUser_id(), user.getName(), "Login successful.");
             }
-        } else {
-            return "User not found.";
+            throw new IllegalArgumentException("Invalid password.");
         }
+        throw new IllegalArgumentException("User not found.");
     }
+
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
