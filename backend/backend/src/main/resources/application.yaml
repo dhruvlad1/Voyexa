@@ -1,8 +1,11 @@
 spring:
+  config:
+    import: optional:file:./backend/backend/env.properties
+
   datasource:
-    url: jdbc:postgresql://aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres?prepareThreshold=0&binaryTransfer=false
-    username: postgres.skoqgsriiwsjwifajlpc
-    password: "J/gkn8D#tGa@aFU"
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -15,11 +18,11 @@ spring:
 
 geoapify:
   base-url: https://api.geoapify.com/v1/geocode/autocomplete
-  api-key: 7e9fb89c784640d4878deb402da2367a
+  api-key: ${GEOAPIFY_API_KEY}
   limit: 10
 
 gemini:
   api:
-    planner-key: AIzaSyDax3hzFdpF-sgLljerlV9RqkuZpAgGpMY
-    validator-key: AIzaSyCMp2HBuvpdtJwt_0U3vH_tUMXzYUShovs
+    planner-key: ${GEMINI_PLANNER_API_KEY}
+    validator-key: ${GEMINI_VALIDATOR_API_KEY}
     url: https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent
