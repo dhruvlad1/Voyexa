@@ -1,0 +1,56 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### Logs and temporary files ###
+*.log
+logs/
+*.tmp
+*.swp
+*.bak
+
+### OS-specific files ###
+.DS_Store
+Thumbs.db
+
+### Environment and sensitive config ###
+env.properties
+application-local.yaml
+application-dev.yaml
+# Uncomment if you move sensitive data (e.g., passwords) to profiles:
+# application-*.yaml
+
+### Other ###
+*.pid
+*.seed
+*.pid.lock
