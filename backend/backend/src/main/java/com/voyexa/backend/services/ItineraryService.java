@@ -1,7 +1,9 @@
 package com.voyexa.backend.services;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.voyexa.backend.DTOS.TripGenerationRequestDto;
+import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,7 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
+@Data
 @Service
 public class ItineraryService {
 
@@ -343,10 +345,10 @@ public class ItineraryService {
     }
 
     // Inner classes for Gemini API request/response mapping
+    @Getter
     private static class GeminiRequest {
         private final List<Content> contents;
         public GeminiRequest(List<Content> contents) { this.contents = contents; }
-        public List<Content> getContents() { return contents; }
 
         private static class Content {
             private final List<Part> parts;
@@ -354,34 +356,37 @@ public class ItineraryService {
             public List<Part> getParts() { return parts; }
         }
 
+        @Getter
         private static class Part {
             private final String text;
             public Part(String text) { this.text = text; }
-            public String getText() { return text; }
         }
     }
 
+    @Setter
+    @Getter
     private static class GeminiResponse {
         private List<Candidate> candidates;
-        public List<Candidate> getCandidates() { return candidates; }
-        public void setCandidates(List<Candidate> candidates) { this.candidates = candidates; }
 
+        @Setter
+        @Getter
         private static class Candidate {
             private Content content;
-            public Content getContent() { return content; }
-            public void setContent(Content content) { this.content = content; }
+
         }
 
+        @Setter
+        @Getter
         private static class Content {
             private List<Part> parts;
-            public List<Part> getParts() { return parts; }
-            public void setParts(List<Part> parts) { this.parts = parts; }
+
         }
 
+        @Setter
+        @Getter
         private static class Part {
             private String text;
-            public String getText() { return text; }
-            public void setText(String text) { this.text = text; }
+
         }
     }
     //</editor-fold>
