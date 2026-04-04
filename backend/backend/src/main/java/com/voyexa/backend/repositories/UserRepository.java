@@ -1,6 +1,7 @@
 package com.voyexa.backend.repositories;
 
 import com.voyexa.backend.entities.User;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,4 +15,6 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     @Query("SELECT u FROM User u WHERE u.phone_number = :phoneNumber")
     Optional<User> findByPhoneNumber(@Param("phoneNumber") String phoneNumber);
+
+    Optional<User> findById(@NotNull Integer userId);
 }

@@ -1,5 +1,11 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import {
+    Calendar, MapPin, Clock, Info, ArrowLeft,
+    Hotel, Sparkles, Sunrise, Sun, Sunset,
+    Lightbulb, Share2, Download
+} from 'lucide-react';
+import FloatingLines from '../components/FloatingLines';
 
 const ItineraryResult = () => {
     const location = useLocation();
@@ -7,49 +13,161 @@ const ItineraryResult = () => {
     const { itineraryJson } = location.state || {};
 
     let itineraryData = null;
-    let parseError = null;
+    try {
+        itineraryData = itineraryJson ? JSON.parse(itineraryJson) : null;
+    } catch (e) {
+        console.error("Parsing error", e);
+    }
 
-    if (!itineraryJson) {
+    if (!itineraryData) {
         return (
-            <div style={{ backgroundColor: 'white', color: 'black', padding: '40px', minHeight: '100vh' }}>
-                <h1>No Itinerary Data</h1>
-                <p>Itinerary data was not provided. Please go back and generate an itinerary first.</p>
-                <button onClick={() => navigate('/create-trip')} style={{ padding: '10px 20px', marginTop: '20px' }}>
-                    Go Back
-                </button>
+            <div className="relative min-h-screen w-full flex items-center justify-center bg-slate-950">
+                <FloatingLines />
+                <div className="relative z-10 bg-slate-900 border border-white/10 p-8 rounded-2xl text-center text-white">
+                    <h1 className="text-2xl font-bold mb-4">No Data Found</h1>
+                    <button onClick={() => navigate('/create-trip')} className="px-6 py-2 bg-blue-600 rounded-lg hover:bg-blue-500">
+                        Go Back
+                    </button>
+                </div>
             </div>
         );
     }
 
-    try {
-        itineraryData = JSON.parse(itineraryJson);
-    } catch (e) {
-        parseError = `Failed to parse JSON: ${e.message}`;
-    }
+    const ActivityCard = ({ section, data, icon: Icon, colorClass }) => {
+        if (!data || !data.activity) return null;
+        return (
+            <div className="relative pl-8 pb-10 border-l-2 border-white/10 last:border-0 last:pb-0">
+                <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 border-slate-950 shadow-[0_0_15px_rgba(59,130,246,0.6)] ${colorClass} z-10`} />
+                <div className="bg-slate-900/95 backdrop-blur-md rounded-2xl p-6 border border-white/10 hover:border-blue-500/50 transition-all duration-300 group shadow-xl">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Icon size={16} className="text-blue-400" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400/70">{section}</span>
+                    </div>
+                    <h4 className="text-xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors tracking-tight">
+                        {data.activity.title}
+                    </h4>
+                    <p className="text-slate-300 text-sm leading-relaxed mb-4 font-medium">
+                        {data.activity.description}
+                    </p>
+
+                    <div className="flex flex-wrap gap-4 text-[11px] font-bold text-slate-400">
+                        <div className="flex items-center gap-1.5 bg-slate-800/50 px-2 py-1 rounded-md border border-white/5">
+                            <MapPin size={14} className="text-rose-500" />
+                            {data.activity.location}
+                        </div>
+                        {data.estimatedTime && (
+                            <div className="flex items-center gap-1.5 bg-slate-800/50 px-2 py-1 rounded-md border border-white/5">
+                                <Clock size={14} />
+                                {data.estimatedTime}
+                            </div>
+                        )}
+                        {data.costTier && (
+                            <span className="text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-md border border-emerald-400/20">
+                                {data.costTier}
+                            </span>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     return (
-        <div style={{ backgroundColor: 'white', color: 'black', padding: '40px', fontFamily: 'monospace', minHeight: '100vh' }}>
-            <button onClick={() => navigate('/create-trip')} style={{ padding: '10px 20px', marginBottom: '20px', fontFamily: 'sans-serif' }}>
-                &larr; Back to Editor
-            </button>
-            <h1 style={{ fontFamily: 'sans-serif', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
-                Generated Itinerary (Raw JSON)
-            </h1>
-            
-            {parseError ? (
-                <div>
-                    <h2 style={{ color: 'red', fontFamily: 'sans-serif' }}>Parsing Error</h2>
-                    <p style={{ fontFamily: 'sans-serif' }}>{parseError}</p>
-                    <h3>Original JSON String:</h3>
-                    <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word', background: '#f0f0f0', padding: '20px', borderRadius: '8px', border: '1px solid #ccc' }}>
-                        {itineraryJson}
-                    </pre>
-                </div>
-            ) : (
-                <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word', background: '#f0f0f0', padding: '20px', borderRadius: '8px', border: '1px solid #ccc' }}>
-                    {JSON.stringify(itineraryData, null, 2)}
-                </pre>
-            )}
+        <div className="relative min-h-screen w-full bg-slate-950 text-slate-200 overflow-x-hidden">
+            <div className="fixed inset-0 z-0">
+                <FloatingLines />
+                <div className="absolute inset-0 bg-slate-950/40 pointer-events-none" />
+            </div>
+
+            <div className="relative z-10">
+                {/* Navbar */}
+                <nav className="sticky top-0 w-full border-b border-white/5 bg-slate-950/80 backdrop-blur-xl px-6 py-4 flex items-center justify-between">
+                    <button onClick={() => navigate('/create-trip')} className="flex items-center gap-2 text-slate-400 hover:text-white transition group">
+                        <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform"/>
+                        <span className="font-bold tracking-tight">Voyexa Planner</span>
+                    </button>
+                    <div className="flex gap-3">
+                        <button className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition text-slate-300">
+                            <Share2 size={18} />
+                        </button>
+                        <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg font-bold text-sm transition shadow-lg shadow-blue-900/40">
+                            <Download size={18} /> Save Trip
+                        </button>
+                    </div>
+                </nav>
+
+                <main className="max-w-5xl mx-auto px-6 py-12">
+                    {/* Hero Header */}
+                    <header className="mb-16">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold mb-6">
+                            <Sparkles size={14} /> AI GENERATED JOURNEY
+                        </div>
+                        <h1 className="text-5xl font-black text-white mb-6 tracking-tighter">Your Custom Itinerary</h1>
+
+                        <div className="grid md:grid-cols-3 gap-8">
+                            <div className="md:col-span-2 p-8 rounded-3xl bg-slate-900 border border-white/10 shadow-xl">
+                                <p className="text-lg text-slate-200 leading-relaxed font-medium italic">
+                                    "{itineraryData.tripSummary}"
+                                </p>
+                            </div>
+                            <div className="p-8 rounded-3xl bg-blue-600/10 border border-blue-500/20 backdrop-blur-md flex flex-col justify-center shadow-lg">
+                                <div className="flex items-center gap-3 text-blue-400 mb-2">
+                                    <Hotel size={24} />
+                                    <span className="font-bold text-xs uppercase tracking-widest">Lodging Advice</span>
+                                </div>
+                                <p className="text-slate-300 text-sm leading-relaxed font-medium">
+                                    {itineraryData.accommodationAdvice}
+                                </p>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Timeline */}
+                    <div className="space-y-24">
+                        {itineraryData.itinerary.map((day, idx) => (
+                            <div key={idx} className="flex flex-col lg:flex-row gap-12">
+                                {/* Day Indicator */}
+                                <div className="lg:w-48 shrink-0">
+                                    <div className="lg:sticky lg:top-32">
+                                        <div className="text-7xl font-black text-white/60 mb-2 leading-none">0{day.dayNumber}</div>
+                                        <div className="flex items-center gap-2 text-blue-500 font-black text-xs uppercase tracking-[0.3em] mb-4">
+                                            <Calendar size={14} /> {day.date}
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-white tracking-tight leading-tight">{day.themeTitle}</h3>
+
+                                        {day.logistics && (
+                                            <div className="mt-6 p-4 rounded-xl bg-slate-900 border border-white/5 text-[11px] text-slate-400 leading-relaxed">
+                                                <div className="flex items-center gap-2 mb-2 text-slate-300 font-bold uppercase tracking-wider text-[9px]">
+                                                    <Info size={14} /> Logistics
+                                                </div>
+                                                {day.logistics}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Morning/Afternoon/Evening Cards */}
+                                <div className="flex-1">
+                                    <ActivityCard section="Morning" data={day.morning} icon={Sunrise} colorClass="bg-amber-500" />
+                                    <ActivityCard section="Afternoon" data={day.afternoon} icon={Sun} colorClass="bg-sky-400" />
+                                    <ActivityCard section="Evening" data={day.evening} icon={Sunset} colorClass="bg-indigo-500" />
+
+                                    {day.travelTip && (
+                                        <div className="mt-8 p-6 rounded-2xl bg-gradient-to-br from-blue-600/15 via-slate-900 to-slate-900 border border-blue-500/20 shadow-xl">
+                                            <div className="flex items-center gap-3 text-blue-400 font-black text-xs tracking-widest mb-2 uppercase">
+                                                <Lightbulb size={18} /> Voyexa Tip
+                                            </div>
+                                            <p className="text-slate-200 text-sm italic leading-relaxed font-medium">
+                                                {day.travelTip}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </main>
+            </div>
         </div>
     );
 };
