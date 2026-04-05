@@ -47,6 +47,9 @@ public class TripController {
 
     @PostMapping("/generate")
     public ResponseEntity<String> generateItinerary(@Valid @RequestBody TripGenerationRequestDto dto) {
+        // Persist user trip preferences from the same request even if itinerary storage is postponed.
+        tripService.createTripFromGenerationRequest(dto);
+
         String itineraryJson = itineraryService.generateItinerary(dto);
         return ResponseEntity.ok(itineraryJson);
     }

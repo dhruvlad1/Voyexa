@@ -259,11 +259,20 @@ const CreateTrip = () => {
         setApiError("");
         setIsGenerating(true);
 
+        const rawUserId = localStorage.getItem("voyexa_user_id");
+        const userId = rawUserId ? Number(rawUserId) : null;
+        if (!userId || Number.isNaN(userId)) {
+            setApiError("Please log in again before building an itinerary.");
+            setIsGenerating(false);
+            return;
+        }
+
         const otherInterestsArray = Array.isArray(tripConfig.otherInterests)
             ? tripConfig.otherInterests
             : (tripConfig.otherInterests ? tripConfig.otherInterests.split(',').map(s => s.trim()) : []);
 
         const payload = {
+            userId,
             origin: tripConfig.origin,
             destination: tripConfig.destination,
             startDate: tripConfig.startDate,
@@ -271,6 +280,8 @@ const CreateTrip = () => {
             flexibility: tripConfig.flexibility,
             travelers: tripConfig.travelers,
             travelerCount: tripConfig.travelerCount,
+            adultCount: tripConfig.adultCount,
+            childCount: tripConfig.childCount,
             budget: tripConfig.budget,
             accommodationType: tripConfig.accommodationType,
             travelPace: tripConfig.travelPace,

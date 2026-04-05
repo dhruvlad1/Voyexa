@@ -1,5 +1,6 @@
 package com.voyexa.backend.services;
 
+import com.voyexa.backend.DTOS.TripGenerationRequestDto;
 import com.voyexa.backend.DTOS.TripRequestDto;
 import com.voyexa.backend.DTOS.TripResponseDto;
 import com.voyexa.backend.entities.Trip;
@@ -79,6 +80,39 @@ public class TripService {
 
         Trip saved = tripRepository.save(trip);
         return new TripResponseDto(saved.getId(), "Trip preferences saved.");
+    }
+
+    public void createTripFromGenerationRequest(TripGenerationRequestDto dto) {
+        TripRequestDto tripRequestDto = new TripRequestDto();
+        tripRequestDto.setUserId(dto.getUserId());
+        tripRequestDto.setOrigin(dto.getOrigin());
+        tripRequestDto.setDestination(dto.getDestination());
+        tripRequestDto.setStartDate(dto.getStartDate());
+        tripRequestDto.setEndDate(dto.getEndDate());
+        tripRequestDto.setDateFlexibility(dto.getFlexibility());
+        tripRequestDto.setTravelers(dto.getTravelers());
+
+        if (dto.getAdultCount() != null || dto.getChildCount() != null) {
+            tripRequestDto.setAdultCount(dto.getAdultCount() == null ? 0 : dto.getAdultCount());
+            tripRequestDto.setChildCount(dto.getChildCount() == null ? 0 : dto.getChildCount());
+        } else if ("Solo".equalsIgnoreCase(dto.getTravelers())) {
+            tripRequestDto.setAdultCount(1);
+            tripRequestDto.setChildCount(0);
+        } else if ("Couple".equalsIgnoreCase(dto.getTravelers())) {
+            tripRequestDto.setAdultCount(2);
+            tripRequestDto.setChildCount(0);
+        } else {
+            tripRequestDto.setAdultCount(dto.getTravelerCount());
+            tripRequestDto.setChildCount(0);
+        }
+
+        tripRequestDto.setInterests(dto.getInterests());
+        tripRequestDto.setOtherInterest(dto.getOtherInterests() == null ? null : String.join(", ", dto.getOtherInterests()));
+        tripRequestDto.setAccommodationPreference(dto.getAccommodationType());
+        tripRequestDto.setTripPace(dto.getTravelPace());
+        tripRequestDto.setBudget(dto.getBudget());
+
+        createTrip(tripRequestDto);
     }
 
     private void validateDates(TripRequestDto dto) {

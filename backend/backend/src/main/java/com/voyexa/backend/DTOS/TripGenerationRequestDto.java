@@ -15,6 +15,9 @@ import java.util.List;
 @Setter
 public class TripGenerationRequestDto {
 
+    @NotNull
+    private Integer userId;
+
     @NotBlank
     private String origin;
 
@@ -37,6 +40,12 @@ public class TripGenerationRequestDto {
     @NotNull
     @Min(1)
     private Integer travelerCount;
+
+    @Min(0)
+    private Integer adultCount;
+
+    @Min(0)
+    private Integer childCount;
 
     @NotBlank
     private String budget;
@@ -68,4 +77,3 @@ public class TripGenerationRequestDto {
         private String notes;
     }
 }
-
