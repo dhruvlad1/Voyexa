@@ -16,7 +16,6 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 @Service
 public class ExternalPlaceService {
@@ -48,54 +47,38 @@ public class ExternalPlaceService {
         }
 
         try {
-            // Federated Search: Fetch countries and cities concurrently
-            CompletableFuture<List<PlaceDto>> countriesFuture = CompletableFuture.supplyAsync(() -> 
-                fetchAndParse(query, "country", 2)
-            );
-
-            CompletableFuture<List<PlaceDto>> citiesFuture = CompletableFuture.supplyAsync(() -> 
-                fetchAndParse(query, "city", 4)
-            );
-
-            // Wait for both to complete and combine results
-            CompletableFuture.allOf(countriesFuture, citiesFuture).join();
-
-            List<PlaceDto> combinedResults = new ArrayList<>();
-            combinedResults.addAll(countriesFuture.get());
-            combinedResults.addAll(citiesFuture.get());
-
-            return combinedResults;
-
+            // General Autocomplete Search without strict type filters
+            return fetchAndParse(query, 6);
         } catch (Exception e) {
             log.error("Unexpected error in searchPlaces", e);
             return List.of();
         }
     }
 
-    private List<PlaceDto> fetchAndParse(String query, String type, int limit) {
+    private List<PlaceDto> fetchAndParse(String query, int limit) {
         try {
             URI uri = UriComponentsBuilder
                     .fromUriString(geoapifyBaseUrl)
                     .queryParam("text", query.trim())
                     .queryParam("apiKey", geoapifyApiKey)
-                    .queryParam("type", type)
                     .queryParam("limit", limit)
+                    // No explicit "type" queryParam to allow more general places (continents, provinces, etc.)
                     .build(true)
                     .toUri();
 
             String response = restTemplate.getForObject(uri, String.class);
-            return parseGeoapifyResponse(response, type);
+            return parseGeoapifyResponse(response);
 
         } catch (RestClientException e) {
-            log.warn("Error calling Geoapify API for type {}: {}", type, e.getMessage());
+            log.warn("Error calling Geoapify API: {}", e.getMessage());
             return List.of();
         } catch (Exception e) {
-            log.error("Error fetching/parsing for type " + type, e);
+            log.error("Error fetching/parsing Geoapify data", e);
             return List.of();
         }
     }
 
-    private List<PlaceDto> parseGeoapifyResponse(String jsonResponse, String requestType) {
+    private List<PlaceDto> parseGeoapifyResponse(String jsonResponse) {
         List<PlaceDto> results = new ArrayList<>();
 
         if (jsonResponse == null || jsonResponse.trim().isEmpty()) {
@@ -112,26 +95,31 @@ public class ExternalPlaceService {
                 JsonNode properties = feature.path("properties");
                 
                 String country = properties.path("country").asText(null);
-                String displayString;
+                String formatted = properties.path("formatted").asText(null);
                 
-                if ("country".equals(requestType)) {
-                    // For countries, just use the country name. Fallback to properties.name if country is missing.
-                    displayString = country != null ? country : properties.path("name").asText("");
-                } else {
-                    // For cities, use City, Country. Fallback to name if city is missing.
+                // Geoapify provides a "formatted" string which typically perfectly represents the location
+                // Example: "Phuket, Thailand" or "Europe"
+                String displayString = formatted;
+                
+                // Fallback mechanism in case "formatted" is missing
+                if (displayString == null || displayString.trim().isEmpty()) {
                     String city = properties.path("city").asText(null);
-                    String primaryName = city != null ? city : properties.path("name").asText("");
+                    String name = properties.path("name").asText("");
                     
-                    if (country != null && !country.isEmpty() && primaryName != null && !primaryName.isEmpty()) {
-                        displayString = primaryName + ", " + country;
-                    } else {
-                         displayString = primaryName; // Fallback if country is missing
+                    if (city != null && !city.isEmpty() && country != null && !country.isEmpty()) {
+                        displayString = city + ", " + country;
+                    } else if (name != null && !name.isEmpty() && country != null && !country.isEmpty()) {
+                         displayString = name + ", " + country;
+                    } else if (name != null && !name.isEmpty()) {
+                         displayString = name;
+                    } else if (country != null && !country.isEmpty()) {
+                         displayString = country;
                     }
                 }
 
                 if (displayString != null && !displayString.trim().isEmpty()) {
                     PlaceDto dto = new PlaceDto();
-                    dto.setDescription(displayString); // Storing the clean string in description as requested
+                    dto.setDescription(displayString); // Clean string displaying the full place
                     dto.setName(properties.path("name").asText(""));
                     dto.setCountry(country);
                     results.add(dto);
