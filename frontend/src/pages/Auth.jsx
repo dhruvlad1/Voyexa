@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import OnboardingAnimation from "../components/OnboardingAnimation";
 import {
   Plane,
   Mail,
@@ -20,6 +21,7 @@ const Auth = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -68,7 +70,7 @@ const Auth = () => {
             localStorage.setItem("voyexa_user_name", data.name);
           }
           setSuccess(data?.message || "Login successful.");
-          setTimeout(() => navigate("/dashboard"), 1200);
+          setTimeout(() => setShowOnboarding(true), 600);
         } else {
           setError(data?.message || "Login failed.");
         }
@@ -93,6 +95,14 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  const handleOnboardingComplete = useCallback(() => {
+    navigate("/dashboard");
+  }, [navigate]);
+
+  if (showOnboarding) {
+    return <OnboardingAnimation onComplete={handleOnboardingComplete} />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 relative bg-transparent overflow-hidden">
