@@ -36,6 +36,9 @@ public class DashboardService {
     // Cache to avoid spamming the Gemini API
     private List<DestinationDto> cachedDestinations = new ArrayList<>();
     private String cachedMonth = "";
+    
+    // File path for persistent caching across server restarts
+    private static final String CACHE_FILE = "trending_destinations_cache.json";
 
     // A small list of premium placeholders for aesthetic purposes until we add Unsplash API
     private final List<String> placeholderImages = List.of(
@@ -59,8 +62,35 @@ public class DashboardService {
         this.plannerApiKey = plannerApiKey;
         this.geminiApiUrl = geminiApiUrl;
         this.objectMapper = new ObjectMapper();
+        loadCacheFromFile();
+    }
+    
+    private void loadCacheFromFile() {
+        java.io.File file = new java.io.File(CACHE_FILE);
+        if (file.exists()) {
+            try {
+                // Read a small wrapper object containing month and list to ensure perfect mapping
+                CachedData data = objectMapper.readValue(file, CachedData.class);
+                if (data != null && data.getMonth() != null && data.getDestinations() != null) {
+                    this.cachedMonth = data.getMonth();
+                    this.cachedDestinations = data.getDestinations();
+                    log.info("Loaded trending destinations from persistent file cache for month: {}", cachedMonth);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to load persistent cache, will fetch fresh from API. Error: {}", e.getMessage());
+            }
+        }
     }
 
+    private void saveCacheToFile() {
+        try {
+            CachedData data = new CachedData(cachedMonth, cachedDestinations);
+            objectMapper.writeValue(new java.io.File(CACHE_FILE), data);
+        } catch (Exception e) {
+            log.warn("Failed to save persistent cache to file: {}", e.getMessage());
+        }
+    }
+    
     public List<DestinationDto> getTrendingDestinationsMonth() {
         String currentMonth = LocalDate.now().getMonth().name(); // E.g., "APRIL"
 
@@ -86,6 +116,7 @@ public class DashboardService {
 
                 cachedDestinations = destinations;
                 cachedMonth = currentMonth;
+                saveCacheToFile();
                 return cachedDestinations;
 
             } catch (JsonProcessingException e) {
@@ -190,5 +221,19 @@ public class DashboardService {
         @Setter
         @Getter
         private static class Part { private String text; }
+    }
+    
+    @Getter
+    @Setter
+    public static class CachedData {
+        private String month;
+        private List<DestinationDto> destinations;
+        
+        public CachedData() {}
+        
+        public CachedData(String month, List<DestinationDto> destinations) {
+            this.month = month;
+            this.destinations = destinations;
+        }
     }
 }
