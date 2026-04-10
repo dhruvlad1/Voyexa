@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -18,36 +18,27 @@ import {
 const Dashboard = () => {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [trendingPlaces, setTrendingPlaces] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const savedTrips = [
-    {
-      id: 1,
-      city: "Tokyo",
-      country: "Japan",
-      days: 5,
-      type: "Solo",
-      budget: 1250,
-      img: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&q=80&w=400",
-    },
-    {
-      id: 2,
-      city: "Paris",
-      country: "France",
-      days: 3,
-      type: "Couple",
-      budget: 980,
-      img: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=400",
-    },
-    {
-      id: 3,
-      city: "Bali",
-      country: "Indonesia",
-      days: 7,
-      type: "Relax",
-      budget: 2100,
-      img: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&q=80&w=400",
-    },
-  ];
+  const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+
+  useEffect(() => {
+    const fetchTrending = async () => {
+      try {
+        const res = await fetch("http://localhost:8080/api/dashboard/trending");
+        if (res.ok) {
+          const data = await res.json();
+          setTrendingPlaces(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch trending places:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchTrending();
+  }, []);
 
   return (
       <div className="min-h-screen bg-transparent relative flex">
@@ -151,29 +142,47 @@ const Dashboard = () => {
           </div>
 
           {/* TRIP GRID */}
+          <div className="flex justify-between items-end mb-8 mt-12">
+            <div>
+               <h2 className="text-3xl font-black text-white tracking-tight">Trending in {currentMonth}</h2>
+               <p className="text-slate-400 font-medium mt-2">Top 10 hottest destinations picked by AI</p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8 pb-12">
-            {savedTrips.map((trip) => (
+            {isLoading ? (
+               <div className="col-span-full flex justify-center py-20">
+                  <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+               </div>
+            ) : trendingPlaces.length === 0 ? (
+               <div className="col-span-full text-slate-400 py-10">Unable to load trending destinations at this time.</div>
+            ) : trendingPlaces.map((place, idx) => (
                 <div
-                    key={trip.id}
+                    key={idx}
+                    onClick={() => navigate("/create-trip", { state: { prefilledDestination: `${place.city}, ${place.country}` } })}
                     className="group bg-[#0a0f1d]/60 backdrop-blur-md rounded-[2.5rem] overflow-hidden border border-white/10 hover:border-indigo-500/40 transition-all duration-500 cursor-pointer"
                 >
                   <div className="h-56 overflow-hidden relative">
-                    <img src={trip.img} alt={trip.city} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
-                    <div className="absolute top-4 right-4 px-4 py-1.5 bg-[#0a0f1d]/80 backdrop-blur-md rounded-full text-[10px] font-black tracking-widest text-white uppercase">{trip.type}</div>
+                    <img src={place.imageUrl} alt={place.city} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
+                    <div className="absolute top-4 right-4 px-4 py-1.5 bg-[#0a0f1d]/80 backdrop-blur-md rounded-full text-[10px] font-black tracking-widest text-white uppercase">#{idx + 1}</div>
                   </div>
-                  <div className="p-8">
-                    <div className="flex justify-between items-start mb-2 text-white">
-                      <h3 className="text-2xl font-black">{trip.city}</h3>
-                      <div className="text-indigo-400 font-black text-xl">${trip.budget}</div>
-                    </div>
-                    <p className="text-slate-400 text-sm flex items-center gap-1 mb-6 font-semibold font-mono">
-                      <MapPin size={14} className="text-indigo-400" /> {trip.country}
-                    </p>
-                    <div className="flex items-center justify-between pt-6 border-t border-white/5">
-                      <div className="flex items-center gap-2 text-sm font-bold text-slate-300">
-                        <Calendar size={18} className="text-indigo-500" /> {trip.days} Days
+                  <div className="p-8 flex flex-col h-[calc(100%-14rem)]">
+                    <div>
+                      <div className="flex justify-between items-start mb-2 text-white">
+                        <h3 className="text-2xl font-black">{place.city}</h3>
+                        <div className="text-emerald-400 font-black text-xl">~${place.budget}</div>
                       </div>
-                      <div className="text-[10px] font-black px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-lg uppercase tracking-wider">Ready</div>
+                      <p className="text-slate-400 text-sm flex items-center gap-1 mb-4 font-semibold font-mono">
+                        <MapPin size={14} className="text-indigo-400" /> {place.country}
+                      </p>
+                      <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed">
+                        {place.description}
+                      </p>
+                    </div>
+                    <div className="mt-auto pt-6 border-t border-white/5">
+                      <div className="flex items-center gap-2 text-sm font-bold text-indigo-400 group-hover:text-indigo-300 transition-colors">
+                        Plan this trip <ChevronRight size={16} />
+                      </div>
                     </div>
                   </div>
                 </div>

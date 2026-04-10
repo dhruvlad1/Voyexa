@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
     ArrowLeft,
     MapPin,
@@ -167,6 +167,8 @@ const LocationAutocomplete = ({
 
 const CreateTrip = () => {
     const navigate = useNavigate();
+    const { state } = useLocation();
+    
     const [step, setStep] = useState(1);
     const [isGenerating, setIsGenerating] = useState(false);
     const [apiError, setApiError] = useState("");
@@ -188,6 +190,18 @@ const CreateTrip = () => {
         adultCount: 1,
         childCount: 0,
     });
+
+    useEffect(() => {
+        if (state?.prefilledDestination) {
+            setTripConfig(prev => ({ ...prev, destination: state.prefilledDestination }));
+        }
+    }, [state]);
+
+    // Calculate month constraints for trending destinations
+    const today = new Date();
+    const minDate = today.toISOString().split('T')[0];
+    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+    const maxDateConstrained = state?.prefilledDestination ? lastDayOfMonth : undefined;
 
     const travelerOptions = [
         { id: "Solo", label: "Solo Traveler", icon: <User size={20} /> },
@@ -394,6 +408,8 @@ const CreateTrip = () => {
                                 </label>
                                 <input
                                     type="date"
+                                    min={minDate}
+                                    max={maxDateConstrained}
                                     className="w-full p-5 bg-white/5 border border-white/10 rounded-2xl text-lg font-bold text-white outline-none focus:border-indigo-500 transition-all color-scheme-dark"
                                     value={tripConfig.startDate}
                                     onChange={(e) =>
@@ -407,7 +423,8 @@ const CreateTrip = () => {
                                 </label>
                                 <input
                                     type="date"
-                                    min={tripConfig.startDate}
+                                    min={tripConfig.startDate || minDate}
+                                    max={maxDateConstrained}
                                     className="w-full p-5 bg-white/5 border border-white/10 rounded-2xl text-lg font-bold text-white outline-none focus:border-indigo-500 transition-all color-scheme-dark"
                                     value={tripConfig.endDate}
                                     onChange={(e) =>
