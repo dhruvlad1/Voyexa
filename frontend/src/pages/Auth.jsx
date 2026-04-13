@@ -10,6 +10,8 @@ import {
   Phone,
   ShieldCheck,
   AlertCircle,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 const Auth = () => {
@@ -22,6 +24,7 @@ const Auth = () => {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -188,13 +191,21 @@ const Auth = () => {
               className={`absolute left-4 top-4 w-5 h-5 transition-colors duration-300 ${password ? "text-indigo-400" : "text-slate-500"}`}
             />
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Password"
-              className="w-full pl-12 pr-4 py-4 bg-[#1e293b] border border-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-[#242f44] transition-all text-white placeholder:text-slate-500 font-medium"
+              className="w-full pl-12 pr-12 py-4 bg-[#1e293b] border border-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-[#242f44] transition-all text-white placeholder:text-slate-500 font-medium"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-white transition-colors"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
           </div>
 
           {error && (
