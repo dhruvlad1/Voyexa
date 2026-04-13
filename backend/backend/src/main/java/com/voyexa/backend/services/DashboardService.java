@@ -19,17 +19,21 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Service
 public class DashboardService {
 
     private static final Logger log = LoggerFactory.getLogger(DashboardService.class);
+    private static final int EXPECTED_PLANNER_KEYS = 4;
 
     private final RestTemplate restTemplate;
-    private final String plannerApiKey;
+    private final Queue<String> plannerKeys = new ConcurrentLinkedQueue<>();
     private final String geminiApiUrl;
     private final ObjectMapper objectMapper;
 
@@ -55,11 +59,17 @@ public class DashboardService {
     );
 
     public DashboardService(
-            @Value("${gemini.api.planner-key}") String plannerApiKey,
+            @Value("${gemini.api.planner-key}") String plannerApiKeyStr,
             @Value("${gemini.api.url}") String geminiApiUrl
     ) {
         this.restTemplate = new RestTemplate();
-        this.plannerApiKey = plannerApiKey;
+        if (plannerApiKeyStr != null) {
+            Arrays.stream(plannerApiKeyStr.split(","))
+                    .map(String::trim)
+                    .filter(k -> !k.isEmpty() && !k.startsWith("YOUR_"))
+                    .forEach(plannerKeys::offer);
+        }
+        warnIfUnexpectedPoolSize("planner", plannerKeys, EXPECTED_PLANNER_KEYS);
         this.geminiApiUrl = geminiApiUrl;
         this.objectMapper = new ObjectMapper();
         loadCacheFromFile();
@@ -100,7 +110,7 @@ public class DashboardService {
 
         log.info("Cache miss for month {}. Fetching from Gemini API...", currentMonth);
         String prompt = buildPrompt(currentMonth);
-        String jsonResponse = callAiModel(prompt, plannerApiKey);
+        String jsonResponse = callAiModel(prompt);
 
         if (jsonResponse != null) {
             try {
@@ -156,35 +166,60 @@ public class DashboardService {
                 """.formatted(month);
     }
 
-    private String callAiModel(String prompt, String apiKey) {
-        if (apiKey == null || apiKey.isBlank() || apiKey.startsWith("YOUR_")) {
-            log.error("Gemini API key is not configured.");
+    private String callAiModel(String prompt) {
+        if (plannerKeys.isEmpty()) {
+            log.error("Gemini API keys are not configured.");
             return null;
         }
 
-        String url = geminiApiUrl + "?key=" + apiKey;
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        int attempts = plannerKeys.size();
+        for (int i = 0; i < attempts; i++) {
+            String apiKey = plannerKeys.poll();
+            if (apiKey == null) break;
 
-        GeminiRequest.Content content = new GeminiRequest.Content(Collections.singletonList(new GeminiRequest.Part(prompt)));
-        GeminiRequest requestBody = new GeminiRequest(Collections.singletonList(content));
-        HttpEntity<GeminiRequest> entity = new HttpEntity<>(requestBody, headers);
+            String url = geminiApiUrl + "?key=" + apiKey;
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
 
-        try {
-            ResponseEntity<GeminiResponse> response = restTemplate.postForEntity(url, entity, GeminiResponse.class);
+            GeminiRequest.Content content = new GeminiRequest.Content(Collections.singletonList(new GeminiRequest.Part(prompt)));
+            GeminiRequest requestBody = new GeminiRequest(Collections.singletonList(content));
+            HttpEntity<GeminiRequest> entity = new HttpEntity<>(requestBody, headers);
 
-            return Optional.ofNullable(response.getBody())
-                    .flatMap(body -> body.getCandidates().stream().findFirst())
-                    .map(GeminiResponse.Candidate::getContent)
-                    .map(GeminiResponse.Content::getParts)
-                    .flatMap(parts -> parts.stream().findFirst())
-                    .map(GeminiResponse.Part::getText)
-                    .map(this::cleanApiResponse)
-                    .orElse(null);
+            try {
+                ResponseEntity<GeminiResponse> response = restTemplate.postForEntity(url, entity, GeminiResponse.class);
 
-        } catch (RestClientException e) {
-            log.error("Error calling Gemini API: {}", e.getMessage());
-            return null;
+                String result = Optional.ofNullable(response.getBody())
+                        .flatMap(body -> body.getCandidates().stream().findFirst())
+                        .map(GeminiResponse.Candidate::getContent)
+                        .map(GeminiResponse.Content::getParts)
+                        .flatMap(parts -> parts.stream().findFirst())
+                        .map(GeminiResponse.Part::getText)
+                        .map(this::cleanApiResponse)
+                        .orElse(null);
+
+                if (result != null && !result.isBlank()) {
+                    // Success! Push to back of queue and return
+                    plannerKeys.offer(apiKey);
+                    return result;
+                } else {
+                    log.warn("Gemini API returned empty response, trying next key...");
+                }
+
+            } catch (RestClientException e) {
+                log.warn("Error calling Gemini API: {}, trying next key...", e.getMessage());
+            }
+            
+            // Push to back of queue to preserve the key for future calls even if it failed (e.g. rate limit)
+            plannerKeys.offer(apiKey);
+        }
+        
+        log.error("All Gemini API keys exhausted or failed for this request.");
+        return null;
+    }
+
+    private void warnIfUnexpectedPoolSize(String poolName, Queue<String> keys, int expectedSize) {
+        if (keys.size() != expectedSize) {
+            log.warn("Gemini {} key pool size is {} (expected {}). Running in warning mode.", poolName, keys.size(), expectedSize);
         }
     }
 
