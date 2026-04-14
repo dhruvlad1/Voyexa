@@ -3,6 +3,7 @@ package com.voyexa.backend.services;
 import com.voyexa.backend.DTOS.TripGenerationRequestDto;
 import com.voyexa.backend.DTOS.TripRequestDto;
 import com.voyexa.backend.DTOS.TripResponseDto;
+import com.voyexa.backend.DTOS.TripSummaryDto;
 import com.voyexa.backend.entities.Trip;
 import com.voyexa.backend.entities.User;
 import com.voyexa.backend.repositories.TripRepository;
@@ -10,7 +11,9 @@ import com.voyexa.backend.repositories.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.util.stream.Collectors;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -58,7 +61,12 @@ public class TripService {
             throw new IllegalArgumentException("childCount cannot be negative.");
         }
 
-        Trip trip = new Trip();
+        Trip trip;
+        if (dto.getTripId() != null) {
+            trip = tripRepository.findById(dto.getTripId()).orElse(new Trip());
+        } else {
+            trip = new Trip();
+        }
         trip.setUser(userOpt.get());
         trip.setOrigin(dto.getOrigin().trim());
         trip.setDestination(dto.getDestination().trim());
@@ -87,6 +95,7 @@ public class TripService {
 
     public TripResponseDto createTripFromGenerationRequest(TripGenerationRequestDto dto) {
         TripRequestDto tripRequestDto = new TripRequestDto();
+        tripRequestDto.setTripId(dto.getTripId());
         tripRequestDto.setUserId(dto.getUserId());
         tripRequestDto.setOrigin(dto.getOrigin());
         tripRequestDto.setDestination(dto.getDestination());
@@ -126,6 +135,28 @@ public class TripService {
         trip.setItineraryJson(itineraryJson);
         trip.setStatus("COMPLETE");
         tripRepository.save(trip);
+    }
+
+    public List<TripSummaryDto> getTripsByUserId(int userId) {
+        List<Trip> trips = tripRepository.findByUserId(userId);
+        return trips.stream().map(trip -> new TripSummaryDto(
+                trip.getId(),
+                trip.getOrigin(),
+                trip.getDestination(),
+                trip.getStartDate(),
+                trip.getEndDate(),
+                trip.getStatus(),
+                trip.getItineraryJson(),
+                trip.getBudget(),
+                trip.getAdultCount(),
+                trip.getChildCount(),
+                trip.getTravelGroupType(),
+                trip.getDateFlexibility(),
+                trip.getInterests(),
+                trip.getOtherInterest(),
+                trip.getAccommodationPreference(),
+                trip.getTripPace()
+        )).collect(Collectors.toList());
     }
 
     private void validateDates(TripRequestDto dto) {

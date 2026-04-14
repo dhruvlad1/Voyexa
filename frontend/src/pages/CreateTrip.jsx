@@ -194,6 +194,11 @@ const CreateTrip = () => {
         if (state?.prefilledDestination) {
             setTripConfig(prev => ({ ...prev, destination: state.prefilledDestination }));
         }
+
+        if (state?.editingTrip && state?.prefilledConfig) {
+            setTripConfig(prev => ({ ...prev, ...state.prefilledConfig }));
+            setStep(6);
+        }
     }, [state]);
 
     // Calculate month constraints for trending destinations
@@ -285,6 +290,7 @@ const CreateTrip = () => {
             : (tripConfig.otherInterests ? tripConfig.otherInterests.split(',').map(s => s.trim()) : []);
 
         const payload = {
+            tripId: state?.editingTrip ? state.tripId : null,
             userId,
             origin: tripConfig.origin,
             destination: tripConfig.destination,

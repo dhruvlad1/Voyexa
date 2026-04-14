@@ -71,7 +71,10 @@ const Dashboard = () => {
             <button className="w-full flex items-center gap-3 px-4 py-3.5 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-500/20">
               <TrendingUp size={20} /> Dashboard
             </button>
-            <button className="w-full flex items-center gap-3 px-4 py-3.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-2xl font-semibold group transition-all">
+            <button 
+              onClick={() => navigate("/my-trips")}
+              className="w-full flex items-center gap-3 px-4 py-3.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-2xl font-semibold group transition-all"
+            >
               <Clock size={20} className="group-hover:text-indigo-400" /> My Trips
             </button>
             <button className="w-full flex items-center gap-3 px-4 py-3.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-2xl font-semibold group transition-all">
