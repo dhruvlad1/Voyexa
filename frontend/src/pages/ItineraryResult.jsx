@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
     Calendar, MapPin, Clock, Info, ArrowLeft,
@@ -13,13 +13,50 @@ const ItineraryResult = () => {
     const { tripId, itineraryJson } = location.state || {};
     const [isSaving, setIsSaving] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
+    const [isInjectingImages, setIsInjectingImages] = useState(false);
 
-    let itineraryData = null;
-    try {
-        itineraryData = itineraryJson ? JSON.parse(itineraryJson) : null;
-    } catch (e) {
-        console.error("Parsing error", e);
-    }
+    const [itineraryData, setItineraryData] = useState(() => {
+        try {
+            return itineraryJson ? JSON.parse(itineraryJson) : null;
+        } catch (e) {
+            console.error("Parsing error", e);
+            return null;
+        }
+    });
+
+    useEffect(() => {
+        if (!itineraryData || !itineraryData.itinerary) return;
+
+        let needsImages = false;
+        for (const day of itineraryData.itinerary) {
+            for (const period of ['morning', 'afternoon', 'evening']) {
+                const activity = day[period]?.activity;
+                if (activity && activity.imageUrl === undefined) {
+                    needsImages = true;
+                    break;
+                }
+            }
+            if (needsImages) break;
+        }
+
+        if (needsImages) {
+            setIsInjectingImages(true);
+            fetch('http://localhost:8080/api/trips/inject-images', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(itineraryData)
+            })
+            .then(res => res.json())
+            .then(data => {
+                setItineraryData(data);
+                setIsInjectingImages(false);
+            })
+            .catch(err => {
+                console.error("Failed to inject images", err);
+                setIsInjectingImages(false);
+            });
+        }
+    }, [itineraryJson]);
 
     if (!itineraryData) {
         return (
@@ -85,12 +122,19 @@ const ItineraryResult = () => {
             <div className="relative pl-8 pb-10 border-l-2 border-white/10 last:border-0 last:pb-0">
                 <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 border-slate-950 shadow-[0_0_15px_rgba(59,130,246,0.6)] ${colorClass} z-10`} />
                 <div className="bg-slate-900/95 backdrop-blur-md rounded-2xl border border-white/10 hover:border-blue-500/50 transition-all duration-300 group shadow-xl overflow-hidden">
-                    {data.activity.imageUrl && (
+                    {data.activity.imageUrl ? (
                         <div className="w-full h-48 relative overflow-hidden">
                             <img src={data.activity.imageUrl} alt={data.activity.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent"></div>
                         </div>
-                    )}
+                    ) : isInjectingImages ? (
+                        <div className="w-full h-48 relative overflow-hidden bg-white/5 animate-pulse flex items-center justify-center">
+                            <span className="text-white/20 font-bold uppercase tracking-widest text-xs flex gap-2 items-center">
+                                <span className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin"></span>
+                                Generating Visuals...
+                            </span>
+                        </div>
+                    ) : null}
                     <div className="p-6 relative z-10">
                         <div className="flex items-center gap-2 mb-3">
                             <Icon size={16} className="text-blue-400" />

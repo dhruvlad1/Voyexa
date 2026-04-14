@@ -5,6 +5,7 @@ import com.voyexa.backend.DTOS.TripGenerationRequestDto;
 import com.voyexa.backend.DTOS.TripGenerationResponseDto;
 import com.voyexa.backend.DTOS.TripRequestDto;
 import com.voyexa.backend.DTOS.TripResponseDto;
+import com.voyexa.backend.DTOS.TripSummaryDto;
 import com.voyexa.backend.services.ExternalPlaceService;
 import com.voyexa.backend.services.ItineraryService;
 import com.voyexa.backend.services.TripService;
@@ -12,6 +13,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
@@ -64,6 +66,19 @@ public class TripController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/inject-images")
+    public ResponseEntity<Map<String, Object>> injectImages(@RequestBody Map<String, Object> itineraryMap) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonStr = mapper.writeValueAsString(itineraryMap);
+            String populatedJson = itineraryService.injectImagesIntoItinerary(jsonStr);
+            Map<String, Object> responseMap = mapper.readValue(populatedJson, Map.class);
+            return ResponseEntity.ok(responseMap);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @PutMapping("/{tripId}/itinerary")
     public ResponseEntity<Void> saveItinerary(
             @PathVariable UUID tripId,
@@ -74,5 +89,11 @@ public class TripController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<TripSummaryDto>> getTripsByUser(@PathVariable int userId) {
+        List<TripSummaryDto> trips = tripService.getTripsByUserId(userId);
+        return ResponseEntity.ok(trips);
     }
 }

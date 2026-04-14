@@ -179,7 +179,7 @@ public class ItineraryService {
         return rawText.replace("```json", "").replace("```", "").trim();
     }
     
-    private String injectImagesIntoItinerary(String json) {
+    public String injectImagesIntoItinerary(String json) {
         try {
             JsonNode root = objectMapper.readTree(json);
             JsonNode itineraryArray = root.path("itinerary");
