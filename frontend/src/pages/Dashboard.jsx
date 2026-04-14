@@ -18,6 +18,7 @@ import {
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
+import UserProfileModal from "../components/UserProfileModal";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -27,6 +28,8 @@ const Dashboard = () => {
   const [trendingPlaces, setTrendingPlaces] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState("");
+  const [userData, setUserData] = useState({ name: "", email: "", phone: "" });
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // Refs for parallax animations
   const heroBgRef = useRef(null);
@@ -43,6 +46,11 @@ const Dashboard = () => {
     const storedName = localStorage.getItem("voyexa_user_name");
     if (storedName) {
       setUserName(storedName);
+      setUserData({
+        name: storedName,
+        email: localStorage.getItem("voyexa_user_email") || "",
+        phone: localStorage.getItem("voyexa_user_phone") || ""
+      });
     }
     
     const fetchTrending = async () => {
@@ -300,14 +308,20 @@ const Dashboard = () => {
           </nav>
 
           <div className="p-6 space-y-3 border-t border-slate-800/50">
-            <button className="w-full flex items-center gap-3 px-4 py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-semibold text-slate-300 transition-all group">
+            <button 
+                onClick={() => setIsProfileModalOpen(true)}
+                className="w-full flex items-center gap-3 px-4 py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-semibold text-slate-300 transition-all group"
+            >
               <div className="flex items-center justify-center w-8 h-8 bg-indigo-600 rounded-lg text-white font-bold text-sm">
                 {userName.charAt(0).toUpperCase()}
               </div>
               <span className="truncate">{userName}</span>
             </button>
             <button
-                onClick={() => navigate("/")}
+                onClick={() => {
+                  localStorage.clear();
+                  navigate("/");
+                }}
                 className="w-full flex items-center gap-3 px-4 py-3.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-2xl font-bold group transition-all"
             >
               <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" /> Sign Out
@@ -436,6 +450,12 @@ const Dashboard = () => {
           </div>
           </div>
         </main>
+
+        <UserProfileModal 
+          isOpen={isProfileModalOpen} 
+          onClose={() => setIsProfileModalOpen(false)} 
+          user={userData}
+        />
       </div>
   );
 };

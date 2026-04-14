@@ -72,6 +72,12 @@ const Auth = () => {
           if (data?.name) {
             localStorage.setItem("voyexa_user_name", data.name);
           }
+          if (data?.email) {
+            localStorage.setItem("voyexa_user_email", data.email);
+          }
+          if (data?.phone_number) {
+            localStorage.setItem("voyexa_user_phone", data.phone_number);
+          }
           setSuccess(data?.message || "Login successful.");
           setTimeout(() => setShowOnboarding(true), 600);
         } else {

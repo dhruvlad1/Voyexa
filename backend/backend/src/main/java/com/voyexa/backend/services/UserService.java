@@ -66,7 +66,7 @@ public class UserService {
 
         Optional<User> userOpt = userRepository.findByEmail(dto.getEmail());
         User user = userOpt.orElseThrow(() -> new IllegalArgumentException("User not found."));
-        return new UserLoginResponseDto(user.getUser_id(), user.getName(), "Login successful.");
+        return new UserLoginResponseDto(user.getUser_id(), user.getName(), user.getEmail(), user.getPhone_number(), "Login successful.");
     }
 
     public List<User> getAllUsers() {
