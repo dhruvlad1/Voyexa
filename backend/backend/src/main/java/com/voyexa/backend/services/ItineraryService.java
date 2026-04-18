@@ -207,9 +207,8 @@ public class ItineraryService {
                             String location = activityNode.path("location").asText("");
                             
                             if (!title.isEmpty()) {
-                                String query = title + " " + location;
                                 java.util.concurrent.CompletableFuture<Void> future = java.util.concurrent.CompletableFuture.runAsync(() -> {
-                                    String imageUrl = pexelsImageService.fetchImageForActivity(query);
+                                    String imageUrl = pexelsImageService.fetchImageForActivity(title, location);
                                     ((ObjectNode) activityNode).put("imageUrl", imageUrl);
                                 });
                                 futures.add(future);
