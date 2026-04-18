@@ -3,15 +3,20 @@ package com.voyexa.backend.controller;
 import com.voyexa.backend.DTOS.AlternativeGenerationRequestDto;
 import com.voyexa.backend.DTOS.AlternativeGenerationResponseDto;
 import com.voyexa.backend.DTOS.PlaceDto;
+import com.voyexa.backend.DTOS.ReorderItineraryRequestDto;
+import com.voyexa.backend.DTOS.TripForkRequestDto;
 import com.voyexa.backend.DTOS.TripGenerationRequestDto;
 import com.voyexa.backend.DTOS.TripGenerationResponseDto;
 import com.voyexa.backend.DTOS.TripRequestDto;
 import com.voyexa.backend.DTOS.TripResponseDto;
 import com.voyexa.backend.DTOS.TripSummaryDto;
+import com.voyexa.backend.DTOS.TripShareResponseDto;
+import com.voyexa.backend.entities.Trip;
 import com.voyexa.backend.services.ActivityAlternativeService;
 import com.voyexa.backend.services.ExternalPlaceService;
 import com.voyexa.backend.services.ItineraryService;
 import com.voyexa.backend.services.TripService;
+import com.voyexa.backend.services.TripShareService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.UUID;
 
 @RestController
@@ -31,16 +37,19 @@ public class TripController {
     private final TripService tripService;
     private final ItineraryService itineraryService;
     private final ActivityAlternativeService activityAlternativeService;
+    private final TripShareService tripShareService;
 
     public TripController(
             ExternalPlaceService externalPlaceService,
             TripService tripService,
             ItineraryService itineraryService,
-            ActivityAlternativeService activityAlternativeService) {
+            ActivityAlternativeService activityAlternativeService,
+            TripShareService tripShareService) {
         this.externalPlaceService = externalPlaceService;
         this.tripService = tripService;
         this.itineraryService = itineraryService;
         this.activityAlternativeService = activityAlternativeService;
+        this.tripShareService = tripShareService;
     }
 
     @GetMapping("/places/search")
@@ -137,6 +146,76 @@ public class TripController {
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * Reorder days in the itinerary
+     */
+    @PutMapping("/{tripId}/reorder")
+    public ResponseEntity<Void> reorderItinerary(
+            @PathVariable UUID tripId,
+            @Valid @RequestBody ReorderItineraryRequestDto requestDto) {
+        try {
+            tripService.reorderItinerary(tripId, requestDto);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * Fork (create variation) of a trip
+     */
+    @PostMapping("/{tripId}/fork")
+    public ResponseEntity<TripResponseDto> forkTrip(
+            @PathVariable UUID tripId,
+            @Valid @RequestBody TripForkRequestDto requestDto) {
+        try {
+            TripResponseDto response = tripService.forkTrip(tripId, requestDto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * Create a shareable link for a trip
+     */
+    @PostMapping("/{tripId}/share")
+    public ResponseEntity<TripShareResponseDto> createShareLink(
+            @PathVariable UUID tripId,
+            @RequestParam Integer userId) {
+        try {
+            TripShareResponseDto response = tripShareService.createShareLink(tripId, userId);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * Get a shared trip by share token (public endpoint)
+     */
+    @GetMapping("/shared/{shareToken}")
+    public ResponseEntity<Map<String, Object>> getSharedTrip(@PathVariable String shareToken) {
+        try {
+            Trip trip = tripShareService.getSharedTrip(shareToken);
+            Map<String, Object> response = new HashMap<>();
+            response.put("trip", trip);
+            response.put("tripId", trip.getId());
+            response.put("itineraryJson", trip.getItineraryJson());
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }

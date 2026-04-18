@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard";
 import CreateTrip from "./pages/CreateTrip";
 import ItineraryResult from "./pages/ItineraryResult";
 import MyTrips from "./pages/MyTrips";
+import SharedTrip from "./pages/SharedTrip";
 import FloatingLines from "./components/FloatingLines";
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
             <Route path="/create-trip" element={<CreateTrip />} />
             <Route path="/itinerary-result" element={<ItineraryResult />} />
             <Route path="/my-trips" element={<MyTrips />} />
+            <Route path="/share/:shareToken" element={<SharedTrip />} />
           </Routes>
         </div>
       </div>
