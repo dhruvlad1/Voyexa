@@ -8,6 +8,7 @@ import ItineraryResult from "./pages/ItineraryResult";
 import MyTrips from "./pages/MyTrips";
 import SharedTrip from "./pages/SharedTrip";
 import FloatingLines from "./components/FloatingLines";
+import LandingPage from "./pages/LandingPage";
 
 function AppShell() {
   const location = useLocation();
@@ -30,7 +31,8 @@ function AppShell() {
 
       <div className="relative z-10">
         <Routes>
-          <Route path="/" element={<Auth />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/create-trip" element={<CreateTrip />} />
           <Route path="/flight-loading" element={<FlightLoadingPage />} />
