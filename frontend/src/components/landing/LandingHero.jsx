@@ -73,11 +73,15 @@ const LandingHero = () => {
 
           {/* Sample itinerary preview (desktop only) */}
           <div className="hidden md:block pt-10">
-            <div className="max-w-2xl mx-auto text-left">
-              <p className="text-xs font-semibold uppercase tracking-wider text-white/50 mb-3">
-                Sample itinerary
-              </p>
-              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+              <div className="max-w-2xl mx-auto text-left">
+                <p className="text-xs font-semibold uppercase tracking-wider text-white/50 mb-3">
+                  Sample itinerary
+                </p>
+              <div
+                className={`rounded-2xl p-6 ${
+                  isDarkTheme ? 'bg-slate-900 border border-slate-700' : 'bg-white/5 backdrop-blur-sm border border-white/10'
+                }`}
+              >
                 <div className="flex items-start justify-between gap-6 mb-5">
                   <div>
                     <h3 className="text-lg font-bold tracking-tight">Tokyo, Japan</h3>
@@ -90,7 +94,11 @@ const LandingHero = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                  <div
+                    className={`flex items-center justify-between gap-4 rounded-xl px-4 py-3 ${
+                      isDarkTheme ? 'border border-slate-700 bg-slate-800' : 'border border-white/10 bg-white/5'
+                    }`}
+                  >
                     <div className="flex items-center gap-3">
                       <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
                       <span className="text-sm font-semibold text-white/80">Morning</span>
@@ -98,7 +106,11 @@ const LandingHero = () => {
                     <span className="text-sm text-white">Senso-ji Temple</span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                  <div
+                    className={`flex items-center justify-between gap-4 rounded-xl px-4 py-3 ${
+                      isDarkTheme ? 'border border-slate-700 bg-slate-800' : 'border border-white/10 bg-white/5'
+                    }`}
+                  >
                     <div className="flex items-center gap-3">
                       <span className="w-2.5 h-2.5 rounded-full bg-sky-400" />
                       <span className="text-sm font-semibold text-white/80">Afternoon</span>
@@ -106,7 +118,11 @@ const LandingHero = () => {
                     <span className="text-sm text-white">Shibuya Crossing</span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                  <div
+                    className={`flex items-center justify-between gap-4 rounded-xl px-4 py-3 ${
+                      isDarkTheme ? 'border border-slate-700 bg-slate-800' : 'border border-white/10 bg-white/5'
+                    }`}
+                  >
                     <div className="flex items-center gap-3">
                       <span className="w-2.5 h-2.5 rounded-full bg-violet-400" />
                       <span className="text-sm font-semibold text-white/80">Evening</span>

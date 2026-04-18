@@ -126,3 +126,224 @@ html.theme-light [class*="text-red-"] {
 html.theme-light [class*="text-emerald-"] {
   color: #047857 !important;
 }
+
+@media print {
+  @page {
+    margin: 10mm;
+  }
+
+  html,
+  body {
+    background: #f1f7ff !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: economy;
+    print-color-adjust: economy;
+  }
+
+  body::before {
+    content: "VOYEXA";
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-24deg);
+    font-size: 64px;
+    font-weight: 800;
+    letter-spacing: 0.26em;
+    color: rgba(30, 64, 175, 0.06);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .pdf-print-hide {
+    display: none !important;
+  }
+
+  .pdf-print-only {
+    display: block !important;
+  }
+
+  .pdf-print-root {
+    position: relative;
+    z-index: 1;
+    background: #f1f7ff !important;
+    color: #0f172a !important;
+  }
+
+  .pdf-print-main {
+    max-width: none !important;
+    padding: 0.75rem 0.75rem 0 !important;
+  }
+
+  .pdf-print-hero {
+    display: none !important;
+  }
+
+  .pdf-print-main .space-y-24 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0.35rem !important;
+  }
+
+  .pdf-print-surface,
+  .pdf-print-tip {
+    background: #ffffff !important;
+    border: 1px solid #c9dbf8 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .pdf-print-tip {
+    background: #eef5ff !important;
+  }
+
+  .pdf-print-surface *,
+  .pdf-print-tip * {
+    color: #0f172a !important;
+  }
+
+  .pdf-print-main > header h1,
+  .pdf-print-day h3,
+  .pdf-print-root [class*="text-white"] {
+    color: #0f172a !important;
+  }
+
+  .pdf-print-soft-text {
+    color: #64748b !important;
+  }
+
+  .pdf-print-timeline {
+    border-left-color: #cbd5e1 !important;
+  }
+
+  .pdf-print-image-overlay {
+    display: none !important;
+  }
+
+  .pdf-print-day {
+    display: grid !important;
+    grid-template-columns: 125px minmax(0, 1fr);
+    gap: 0.7rem !important;
+    align-items: start;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    padding: 0;
+  }
+
+  .pdf-print-day:not(:last-child) {
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .pdf-print-day .lg\:w-48 {
+    width: 125px !important;
+  }
+
+  .pdf-print-day .lg\:sticky {
+    position: static !important;
+  }
+
+  .pdf-print-day .text-7xl {
+    font-size: 1.8rem !important;
+    line-height: 1 !important;
+  }
+
+  .pdf-print-day .text-2xl {
+    font-size: 0.92rem !important;
+    line-height: 1.2rem !important;
+  }
+
+  .pdf-print-day .rounded-2xl {
+    border-radius: 0.7rem !important;
+  }
+
+  .pdf-print-day .p-6 {
+    padding: 0.58rem !important;
+  }
+
+  .pdf-print-day .pb-10 {
+    padding-bottom: 0.4rem !important;
+  }
+
+  .pdf-print-activity-image {
+    display: none !important;
+  }
+
+  .pdf-print-day p {
+    line-height: 1.22 !important;
+    margin-bottom: 0.35rem !important;
+  }
+
+  .pdf-print-day .text-xl {
+    font-size: 0.86rem !important;
+    line-height: 1.16rem !important;
+  }
+
+  .pdf-print-day .mb-4 {
+    margin-bottom: 0.32rem !important;
+  }
+
+  .pdf-print-day .gap-12 {
+    gap: 0.7rem !important;
+  }
+
+  .pdf-print-day .space-y-24 {
+    gap: 0 !important;
+  }
+
+  .pdf-print-day .mt-8 {
+    margin-top: 0.4rem !important;
+  }
+
+  .pdf-print-day .text-sm {
+    font-size: 0.7rem !important;
+  }
+
+  .pdf-print-day .text-xs {
+    font-size: 0.62rem !important;
+  }
+
+  .pdf-print-day .text-\[11px\] {
+    font-size: 0.58rem !important;
+  }
+
+  .pdf-print-day .text-\[10px\] {
+    font-size: 0.54rem !important;
+  }
+
+  .pdf-print-day .shadow-xl,
+  .pdf-print-day .shadow-lg {
+    box-shadow: none !important;
+  }
+
+  .pdf-print-day .border-l-2 {
+    border-left-width: 1px !important;
+  }
+
+  .pdf-print-day .absolute.-left-\[9px\] {
+    left: -7px !important;
+    width: 8px !important;
+    height: 8px !important;
+  }
+
+  .pdf-print-day .font-black {
+    letter-spacing: 0.01em !important;
+  }
+
+  .pdf-print-day .tracking-\[0\.3em\],
+  .pdf-print-day .tracking-\[0\.2em\] {
+    letter-spacing: 0.1em !important;
+  }
+
+  .pdf-print-day .italic {
+    font-style: normal !important;
+  }
+
+  .pdf-print-day .group-hover\:text-blue-400 {
+    color: #0f172a !important;
+  }
+
+  .pdf-print-day *,
+  .pdf-print-day *::before,
+  .pdf-print-day *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

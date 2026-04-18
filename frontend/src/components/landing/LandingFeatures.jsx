@@ -14,6 +14,7 @@ import {
   Briefcase,
 } from 'lucide-react';
 import useScrollReveal from '@/hooks/useScrollReveal';
+import { useTheme } from '@/context/ThemeContext';
 
 const featureDelayClasses = [
   'delay-[100ms]',
@@ -130,6 +131,8 @@ const useCases = [
 const LandingFeatures = () => {
   const sectionRef = useRef(null);
   const revealed = useScrollReveal(sectionRef);
+  const { theme } = useTheme();
+  const isDarkTheme = theme === 'dark';
   const featuresRef = useRef(null);
   const featuresRevealed = useScrollReveal(featuresRef);
   const useCasesRef = useRef(null);
@@ -164,8 +167,12 @@ const LandingFeatures = () => {
                 key={index}
                 data-testid={`feature-card-${index}`}
                 className={
-                  `relative overflow-hidden bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 ` +
-                  `hover:bg-white/10 hover:border-white/20 transition-all duration-700 group ${revealDelayClass} ` +
+                  `relative overflow-hidden rounded-2xl p-6 ` +
+                  `${
+                    isDarkTheme
+                      ? 'bg-slate-900 border border-slate-700 hover:bg-slate-800 hover:border-slate-600'
+                      : 'bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20'
+                  } transition-all duration-700 group ${revealDelayClass} ` +
                   `before:content-[''] before:absolute before:top-0 before:left-0 before:w-full before:h-px before:opacity-0 ` +
                   `before:transition-opacity before:duration-300 group-hover:before:opacity-100 ` +
                   (feature.hoverAccentClass || '') +
@@ -209,13 +216,13 @@ const LandingFeatures = () => {
                 key={index}
                 data-testid={`use-case-card-${index}`}
                 className={
-                  `bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 text-center ` +
-                  `hover:bg-white/10 hover:border-white/20 transition-all duration-700 ${delayClass} ` +
+                  `${isDarkTheme ? 'bg-slate-900 border border-slate-700 hover:bg-slate-800 hover:border-slate-600' : 'bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20'} rounded-2xl p-8 text-center ` +
+                  `transition-all duration-700 ${delayClass} ` +
                   `hover:shadow-lg hover:shadow-indigo-500/10 ` +
                   (useCasesRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6')
                 }
               >
-                <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mx-auto mb-5">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-5 ${isDarkTheme ? 'bg-slate-800' : 'bg-white/10'}`}>
                   <Icon aria-hidden="true" className="w-6 h-6 text-white/80" />
                 </div>
 

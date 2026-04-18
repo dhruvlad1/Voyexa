@@ -13,6 +13,7 @@ export function navigateRequiringLogin(navigate, targetPath, state = undefined) 
     state: {
       loginRequired: true,
       requestedPath: targetPath,
+      requestedState: state,
     },
   });
 }

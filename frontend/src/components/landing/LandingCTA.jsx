@@ -20,9 +20,15 @@ const LandingCTA = () => {
         `py-20 sm:py-32 transition-all duration-700 ` +
         (revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6')
       }
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden bg-gradient-to-br from-indigo-500/20 via-violet-500/20 to-blue-500/20 backdrop-blur-sm border border-white/10 rounded-3xl p-12 sm:p-16 text-center">
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div
+          className={`relative overflow-hidden rounded-3xl p-12 sm:p-16 text-center ${
+            isDarkTheme
+              ? 'bg-gradient-to-br from-slate-900 via-[#111b34] to-slate-900 border border-slate-700'
+              : 'bg-gradient-to-br from-indigo-500/20 via-violet-500/20 to-blue-500/20 backdrop-blur-sm border border-white/10'
+          }`}
+        >
           {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500 rounded-full mix-blend-normal filter blur-3xl opacity-20" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-violet-500 rounded-full mix-blend-normal filter blur-3xl opacity-20" />

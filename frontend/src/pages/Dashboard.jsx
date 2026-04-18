@@ -313,7 +313,7 @@ const Dashboard = () => {
               onClick={() => setIsTravelerProfilesModalOpen(true)}
               className="w-full flex items-center gap-3 px-4 py-3.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-2xl font-semibold group transition-all"
             >
-              <Users size={20} className="group-hover:text-indigo-400" /> Traveler Profiles
+              <Users size={20} className="group-hover:text-indigo-400" /> My Profiles
             </button>
           </nav>
 

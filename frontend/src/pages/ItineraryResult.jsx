@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
     Calendar, MapPin, Clock, Info, ArrowLeft,
     Hotel, Sparkles, Sunrise, Sun, Sunset,
-    Lightbulb, Share2, Download, Check, RefreshCw, X, CheckCircle, GripVertical, Copy
+    Lightbulb, Share2, Download, Check, RefreshCw, X, CheckCircle, GripVertical, Copy, FileText
 } from 'lucide-react';
 import {
     DndContext,
@@ -130,7 +130,7 @@ const ItineraryResult = () => {
         };
 
         return (
-            <div ref={setNodeRef} style={style} className="flex flex-col lg:flex-row gap-12">
+            <div ref={setNodeRef} style={style} className="flex flex-col lg:flex-row gap-12 pdf-print-day">
                 {/* Day Indicator with Drag Handle */}
                 <div className="lg:w-48 shrink-0">
                     <div className="lg:sticky lg:top-32">
@@ -138,12 +138,12 @@ const ItineraryResult = () => {
                             <button
                                 {...attributes}
                                 {...listeners}
-                                className="p-2 hover:bg-blue-500/20 rounded-lg transition cursor-grab active:cursor-grabbing"
+                                className="p-2 hover:bg-blue-500/20 rounded-lg transition cursor-grab active:cursor-grabbing pdf-print-hide"
                                 title="Drag to reorder days"
                             >
                                 <GripVertical size={20} className="text-blue-400" />
                             </button>
-                            <div className="text-7xl font-black text-white/60 leading-none">0{day.dayNumber}</div>
+                            <div className="text-7xl font-black text-white/60 leading-none pdf-print-soft-text">0{day.dayNumber}</div>
                         </div>
                         <div className="flex items-center gap-2 text-blue-500 font-black text-xs uppercase tracking-[0.3em] mb-4">
                             <Calendar size={14} /> {day.date}
@@ -168,7 +168,7 @@ const ItineraryResult = () => {
                     <ActivityCard section="Evening" data={day.evening} icon={Sunset} colorClass="bg-indigo-500" dayNumber={day.dayNumber} timeSlot="evening" />
 
                     {day.travelTip && (
-                        <div className="mt-8 p-6 rounded-2xl bg-gradient-to-br from-blue-600/15 via-slate-900 to-slate-900 border border-blue-500/20 shadow-xl">
+                        <div className="mt-8 p-6 rounded-2xl bg-gradient-to-br from-blue-600/15 via-slate-900 to-slate-900 border border-blue-500/20 shadow-xl pdf-print-tip">
                             <div className="flex items-center gap-3 text-blue-400 font-black text-xs tracking-widest mb-2 uppercase">
                                 <Lightbulb size={18} /> Voyexa Tip
                             </div>
@@ -675,6 +675,19 @@ const ItineraryResult = () => {
         alert('✅ Share link copied to clipboard!');
     };
 
+    const handleSaveAsPdf = () => {
+        setShowAlternativesModal(false);
+        setShowForkModal(false);
+        setShowShareModal(false);
+
+        const previousTitle = document.title;
+        document.title = `Voyexa Itinerary - Trip ${tripId || 'Plan'}`;
+        window.print();
+        setTimeout(() => {
+            document.title = previousTitle;
+        }, 250);
+    };
+
     const ActivityCard = ({ section, data, icon: Icon, colorClass, dayNumber, timeSlot }) => {
         if (!data || !data.activity) return null;
 
@@ -682,13 +695,13 @@ const ItineraryResult = () => {
         const isSelected = selectedIndices[key] !== undefined;
 
         return (
-            <div className="relative pl-8 pb-10 border-l-2 border-white/10 last:border-0 last:pb-0">
+            <div className="relative pl-8 pb-10 border-l-2 border-white/10 last:border-0 last:pb-0 pdf-print-timeline">
                 <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 border-slate-950 shadow-[0_0_15px_rgba(59,130,246,0.6)] ${colorClass} z-10`} />
-                <div className="bg-slate-900/95 backdrop-blur-md rounded-2xl border border-white/10 hover:border-blue-500/50 transition-all duration-300 group shadow-xl overflow-hidden">
+                <div className="bg-slate-900/95 backdrop-blur-md rounded-2xl border border-white/10 hover:border-blue-500/50 transition-all duration-300 group shadow-xl overflow-hidden pdf-print-surface">
                     {data.activity.imageUrl ? (
-                        <div className="w-full h-48 relative overflow-hidden">
+                        <div className="w-full h-48 relative overflow-hidden pdf-print-activity-image">
                             <img src={data.activity.imageUrl} alt={data.activity.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent"></div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent pdf-print-image-overlay"></div>
                         </div>
                     ) : isInjectingImages ? (
                         <div className="w-full h-48 relative overflow-hidden bg-white/5 animate-pulse flex items-center justify-center">
@@ -733,7 +746,7 @@ const ItineraryResult = () => {
                         <button
                             onClick={() => handleGetAlternatives(dayNumber, timeSlot, data.activity)}
                             disabled={loadingAlts === key}
-                            className="w-full px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all duration-200 flex items-center justify-center gap-2 border border-blue-400/30 bg-blue-400/10 hover:bg-blue-400/20 text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all duration-200 flex items-center justify-center gap-2 border border-blue-400/30 bg-blue-400/10 hover:bg-blue-400/20 text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed pdf-print-hide"
                         >
                             {loadingAlts === key ? (
                                 <>
@@ -754,10 +767,10 @@ const ItineraryResult = () => {
     };
 
     return (
-        <div className="relative min-h-screen w-full bg-transparent text-slate-200 overflow-x-hidden">
+        <div className="relative min-h-screen w-full bg-transparent text-slate-200 overflow-x-hidden pdf-print-root">
             <div className="relative z-10">
                 {/* Navbar */}
-                <nav className="sticky top-0 w-full border-b border-white/5 bg-slate-950/80 backdrop-blur-xl px-6 py-4 flex items-center justify-between">
+                <nav className="sticky top-0 w-full border-b border-white/5 bg-slate-950/80 backdrop-blur-xl px-6 py-4 flex items-center justify-between pdf-print-hide">
                     <button onClick={() => navigate('/create-trip')} className="flex items-center gap-2 text-slate-400 hover:text-white transition group">
                         <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
                         <span className="font-bold tracking-tight">Voyexa Planner</span>
@@ -784,6 +797,13 @@ const ItineraryResult = () => {
                             My Trips
                         </button>
                         <button
+                            onClick={handleSaveAsPdf}
+                            className="px-4 py-2 rounded-lg font-bold text-sm transition bg-emerald-700 hover:bg-emerald-600 border border-white/10 text-white flex items-center gap-2"
+                            title="Save this itinerary as PDF"
+                        >
+                            <FileText size={16} /> Save as PDF
+                        </button>
+                        <button
                             onClick={handleSaveTrip}
                             disabled={isSaving || isSaved}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition shadow-lg disabled:cursor-not-allowed ${isSaved
@@ -802,21 +822,25 @@ const ItineraryResult = () => {
                     </div>
                 </nav>
 
-                <main className="max-w-5xl mx-auto px-6 py-12">
+                <main className="max-w-5xl mx-auto px-6 py-12 pdf-print-main">
+                    <div className="hidden pdf-print-only mb-8">
+                        <h1 className="text-3xl font-black text-slate-900">Voyexa Itinerary</h1>
+                        <p className="text-sm text-slate-600 mt-1">Generated travel plan</p>
+                    </div>
                     {/* Hero Header */}
-                    <header className="mb-16">
+                    <header className="mb-16 pdf-print-hero">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold mb-6">
                             <Sparkles size={14} /> AI GENERATED JOURNEY
                         </div>
                         <h1 className="text-5xl font-black text-white mb-6 tracking-tighter">Your Custom Itinerary</h1>
 
                         <div className="grid md:grid-cols-3 gap-8">
-                            <div className="md:col-span-2 p-8 rounded-3xl bg-slate-900 border border-white/10 shadow-xl">
+                            <div className="md:col-span-2 p-8 rounded-3xl bg-slate-900 border border-white/10 shadow-xl pdf-print-surface">
                                 <p className="text-lg text-slate-200 leading-relaxed font-medium italic">
                                     "{itineraryData.tripSummary}"
                                 </p>
                             </div>
-                            <div className="p-8 rounded-3xl bg-blue-600/10 border border-blue-500/20 backdrop-blur-md flex flex-col justify-center shadow-lg">
+                            <div className="p-8 rounded-3xl bg-blue-600/10 border border-blue-500/20 backdrop-blur-md flex flex-col justify-center shadow-lg pdf-print-tip">
                                 <div className="flex items-center gap-3 text-blue-400 mb-2">
                                     <Hotel size={24} />
                                     <span className="font-bold text-xs uppercase tracking-widest">Lodging Advice</span>
