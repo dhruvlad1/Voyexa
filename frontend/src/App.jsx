@@ -8,18 +8,27 @@ import ItineraryResult from "./pages/ItineraryResult";
 import MyTrips from "./pages/MyTrips";
 import SharedTrip from "./pages/SharedTrip";
 import FloatingLines from "./components/FloatingLines";
+import ThemeToggle from "./components/ThemeToggle";
 import LandingPage from "./pages/LandingPage";
+import { ThemeProvider, useTheme } from "./context/ThemeContext";
 
 function AppShell() {
   const location = useLocation();
+  const { theme } = useTheme();
   const hideBackground = location.pathname === "/flight-loading";
+  const appBackground = theme === "light" ? "bg-blue-100" : "bg-[#020617]";
 
   return (
-    <div className="relative min-h-screen w-full bg-[#020617] overflow-hidden">
+    <div className={`relative min-h-screen w-full overflow-hidden transition-colors duration-300 ${appBackground}`}>
+      <ThemeToggle />
       {!hideBackground && (
         <div className="fixed inset-0 z-0 pointer-events-none">
           <FloatingLines
-            linesGradient={["#4f46e5", "#9333ea", "#2563eb", "#ffffff"]}
+            linesGradient={
+              theme === "light"
+                ? ["#93c5fd", "#60a5fa", "#818cf8", "#2563eb"]
+                : ["#4f46e5", "#9333ea", "#2563eb", "#ffffff"]
+            }
             lineCount={8}
             lineDistance={0.4}
             animationSpeed={0.6}
@@ -47,9 +56,11 @@ function AppShell() {
 
 function App() {
   return (
-    <Router>
-      <AppShell />
-    </Router>
+    <ThemeProvider>
+      <Router>
+        <AppShell />
+      </Router>
+    </ThemeProvider>
   );
 }
 

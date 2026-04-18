@@ -4,28 +4,19 @@
 
 :root {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
 }
 
 body {
   margin: 0;
   padding: 0;
-  /* DELETED: background-color: #ffffff 
-     ADDED: Slate-950 base for the shader to pop 
-  */
-  background-color: #020617; 
-  
-  /* DELETED: The old light-blue grid pattern. 
-     The FloatingLines component will now act as your background.
-  */
+  background-color: #020617;
   background-attachment: fixed;
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Updated Glassmorphism for Dark Mode/Shader Background */
 .glass-effect {
-  /* Changed bg-white/70 to bg-white/10. 
-     Higher transparency is needed to see the lines moving behind the UI.
-  */
   @apply bg-white/10 backdrop-blur-2xl border border-white/20 shadow-2xl;
 }
 
@@ -41,4 +32,97 @@ body {
 /* Optional: Smooth scroll for a better travel app feel */
 html {
   scroll-behavior: smooth;
+}
+
+html.theme-light {
+  color-scheme: light;
+}
+
+html.theme-light body {
+  background-color: #dbeafe;
+  color: #0f172a;
+}
+
+html.theme-light .glass-effect {
+  @apply bg-blue-100/75 border-blue-300/70 shadow-xl;
+}
+
+html.theme-light [class*="bg-[#020617]"],
+html.theme-light [class*="bg-[#0a0f1d]"],
+html.theme-light [class*="bg-slate-950"],
+html.theme-light [class*="bg-slate-900"] {
+  background-color: rgba(191, 219, 254, 0.9) !important;
+}
+
+html.theme-light [class*="bg-slate-800"],
+html.theme-light [class*="bg-slate-700"] {
+  background-color: rgba(186, 230, 253, 0.88) !important;
+}
+
+html.theme-light [class*="text-white"] {
+  color: #0f172a !important;
+}
+
+html.theme-light [class*="text-slate-200"],
+html.theme-light [class*="text-slate-300"] {
+  color: #1e293b !important;
+}
+
+html.theme-light [class*="text-slate-400"],
+html.theme-light [class*="text-slate-500"],
+html.theme-light [class*="text-white/60"],
+html.theme-light [class*="text-white/80"] {
+  color: #334155 !important;
+}
+
+html.theme-light [class*="border-white/"],
+html.theme-light [class*="border-slate-8"] {
+  border-color: rgba(59, 130, 246, 0.35) !important;
+}
+
+html.theme-light [class*="shadow-black/"] {
+  --tw-shadow-color: rgba(30, 64, 175, 0.14) !important;
+}
+
+html.theme-light [class*="bg-indigo-"][class*="text-white"],
+html.theme-light [class*="bg-blue-"][class*="text-white"],
+html.theme-light [class*="bg-emerald-"][class*="text-white"],
+html.theme-light [class*="bg-purple-"][class*="text-white"],
+html.theme-light [class*="bg-red-"][class*="text-white"] {
+  color: #ffffff !important;
+}
+
+html.theme-light [class*="from-slate-"],
+html.theme-light [class*="to-slate-"],
+html.theme-light [class*="via-slate-"] {
+  --tw-gradient-from: rgba(191, 219, 254, 0.9) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgba(147, 197, 253, 0.92) var(--tw-gradient-to-position) !important;
+  --tw-gradient-via: rgba(186, 230, 253, 0.9) var(--tw-gradient-via-position) !important;
+}
+
+html.theme-light [class*="bg-white/"],
+html.theme-light [class*="bg-white["] {
+  background-color: rgba(239, 246, 255, 0.78) !important;
+}
+
+html.theme-light [class*="text-blue-300"],
+html.theme-light [class*="text-blue-400"],
+html.theme-light [class*="text-blue-500"],
+html.theme-light [class*="text-indigo-300"],
+html.theme-light [class*="text-indigo-400"],
+html.theme-light [class*="text-sky-300"],
+html.theme-light [class*="text-sky-400"],
+html.theme-light [class*="text-cyan-300"],
+html.theme-light [class*="text-cyan-400"],
+html.theme-light [class*="text-purple-300"],
+html.theme-light [class*="text-purple-400"] {
+  color: #1e40af !important;
+}
+
+html.theme-light [class*="text-red-"] {
+  color: #b91c1c !important;
+}
+
+html.theme-light [class*="text-emerald-"] {
+  color: #047857 !important;
 }

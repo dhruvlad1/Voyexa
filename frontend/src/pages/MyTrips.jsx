@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Calendar, MapPin, Compass, Clock, Plane, Sparkles, ChevronRight } from "lucide-react";
-import FloatingLines from "../components/FloatingLines";
 
 const MyTrips = () => {
     const navigate = useNavigate();
@@ -71,13 +70,7 @@ const MyTrips = () => {
     };
 
     return (
-        <div className="relative min-h-screen w-full bg-slate-950 text-slate-200 overflow-x-hidden">
-            <div className="fixed inset-0 z-0">
-                <FloatingLines />
-                <div className="absolute inset-0 bg-slate-950/40 pointer-events-none" />
-                <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
-            </div>
-
+        <div className="relative min-h-screen w-full bg-transparent text-slate-200 overflow-x-hidden">
             <div className="relative z-10">
                 {/* Navbar */}
                 <nav className="sticky top-0 w-full border-b border-white/5 bg-slate-950/80 backdrop-blur-xl px-6 py-4 flex items-center justify-between">

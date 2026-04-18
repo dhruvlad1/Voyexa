@@ -1,8 +1,11 @@
 import React from "react";
 import { useFlightLoaderAnimation } from "../hooks/useFlightLoaderAnimation";
 import { useLeafletFlightMap } from "../hooks/useLeafletFlightMap";
+import { useTheme } from "../context/ThemeContext";
 
 const FlightLoader = ({ source, destination, loading, onComplete }) => {
+  const { theme } = useTheme();
+  const isLightTheme = theme === "light";
   const {
     visible,
     isFadingOut,
@@ -48,19 +51,27 @@ const FlightLoader = ({ source, destination, loading, onComplete }) => {
       aria-busy={loading}
       role="status"
     >
-      <div className="absolute inset-0 z-10 bg-slate-950/44" />
+      <div className={`absolute inset-0 z-10 ${isLightTheme ? "bg-blue-100/70" : "bg-slate-950/44"}`} />
       <div ref={mapContainerRef} className="absolute inset-0 z-0 isolate" />
       <div className="absolute inset-0 z-20 bg-[radial-gradient(circle_at_14%_14%,rgba(99,102,241,0.20),transparent_36%),radial-gradient(circle_at_86%_82%,rgba(56,189,248,0.16),transparent_40%)] pointer-events-none" />
-      <div className="absolute inset-0 z-20 bg-black/24 pointer-events-none" />
+      <div className={`absolute inset-0 z-20 pointer-events-none ${isLightTheme ? "bg-blue-100/35" : "bg-black/24"}`} />
 
-      <div className="absolute z-40 top-5 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-slate-900/80 border border-slate-600/80 text-xs sm:text-sm text-slate-100 font-semibold tracking-wide pointer-events-none shadow-[0_8px_30px_rgba(2,6,23,0.45)]">
+      <div className={`absolute z-40 top-5 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full border text-xs sm:text-sm font-semibold tracking-wide pointer-events-none ${
+        isLightTheme
+          ? "bg-blue-50/95 border-blue-300 text-blue-900 shadow-[0_8px_24px_rgba(30,64,175,0.15)]"
+          : "bg-slate-900/80 border-slate-600/80 text-slate-100 shadow-[0_8px_30px_rgba(2,6,23,0.45)]"
+      }`}>
         {sourceCoords?.displayName?.split(",")[0] || source} → {destinationCoords?.displayName?.split(",")[0] || destination}
       </div>
 
       <div className="absolute z-50 bottom-8 left-1/2 -translate-x-1/2 pointer-events-none px-4 w-full max-w-3xl">
         <p
           key={activeMessage}
-          className="mx-auto w-fit max-w-full text-center text-base sm:text-xl font-extrabold tracking-wide text-white bg-slate-900/78 border border-slate-600/70 rounded-2xl px-5 sm:px-7 py-3 sm:py-4 shadow-[0_12px_40px_rgba(2,6,23,0.55)]"
+          className={`mx-auto w-fit max-w-full text-center text-base sm:text-xl font-extrabold tracking-wide rounded-2xl px-5 sm:px-7 py-3 sm:py-4 ${
+            isLightTheme
+              ? "text-blue-950 bg-blue-50/92 border border-blue-300 shadow-[0_10px_28px_rgba(30,64,175,0.16)]"
+              : "text-white bg-slate-900/78 border border-slate-600/70 shadow-[0_12px_40px_rgba(2,6,23,0.55)]"
+          }`}
           style={{ animation: "flightMessageIn 550ms ease both" }}
         >
           {activeMessage}
@@ -86,7 +97,7 @@ const FlightLoader = ({ source, destination, loading, onComplete }) => {
           overflow: hidden;
           width: 100%;
           height: 100%;
-          background: #020617;
+          background: ${isLightTheme ? "#dbeafe" : "#020617"};
           outline: 0;
           font: 12px/1.5 "Inter", system-ui, sans-serif;
         }
@@ -135,11 +146,11 @@ const FlightLoader = ({ source, destination, loading, onComplete }) => {
         }
 
         .flight-city-label {
-          background: rgba(15, 23, 42, 0.78);
-          border: 1px solid rgba(100, 116, 139, 0.45);
-          color: rgba(226, 232, 240, 0.98);
+          background: ${isLightTheme ? "rgba(239, 246, 255, 0.92)" : "rgba(15, 23, 42, 0.78)"};
+          border: 1px solid ${isLightTheme ? "rgba(96, 165, 250, 0.55)" : "rgba(100, 116, 139, 0.45)"};
+          color: ${isLightTheme ? "rgba(30, 58, 138, 0.95)" : "rgba(226, 232, 240, 0.98)"};
           border-radius: 8px;
-          box-shadow: 0 8px 24px rgba(2, 6, 23, 0.42);
+          box-shadow: ${isLightTheme ? "0 8px 24px rgba(30, 64, 175, 0.16)" : "0 8px 24px rgba(2, 6, 23, 0.42)"};
           font-size: 11px;
           font-weight: 600;
           padding: 4px 7px;

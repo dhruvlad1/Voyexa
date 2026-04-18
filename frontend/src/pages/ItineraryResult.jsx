@@ -5,7 +5,6 @@ import {
     Hotel, Sparkles, Sunrise, Sun, Sunset,
     Lightbulb, Share2, Download, Check, RefreshCw, X, CheckCircle, GripVertical, Copy
 } from 'lucide-react';
-import FloatingLines from '../components/FloatingLines';
 import {
     DndContext,
     closestCenter,
@@ -100,8 +99,7 @@ const ItineraryResult = () => {
 
     if (!itineraryData) {
         return (
-            <div className="relative min-h-screen w-full flex items-center justify-center bg-slate-950">
-                <FloatingLines />
+            <div className="relative min-h-screen w-full flex items-center justify-center bg-transparent">
                 <div className="relative z-10 bg-slate-900 border border-white/10 p-8 rounded-2xl text-center text-white">
                     <h1 className="text-2xl font-bold mb-4">No Data Found</h1>
                     <button onClick={() => navigate('/create-trip')} className="px-6 py-2 bg-blue-600 rounded-lg hover:bg-blue-500">
@@ -756,12 +754,7 @@ const ItineraryResult = () => {
     };
 
     return (
-        <div className="relative min-h-screen w-full bg-slate-950 text-slate-200 overflow-x-hidden">
-            <div className="fixed inset-0 z-0">
-                <FloatingLines />
-                <div className="absolute inset-0 bg-slate-950/40 pointer-events-none" />
-            </div>
-
+        <div className="relative min-h-screen w-full bg-transparent text-slate-200 overflow-x-hidden">
             <div className="relative z-10">
                 {/* Navbar */}
                 <nav className="sticky top-0 w-full border-b border-white/5 bg-slate-950/80 backdrop-blur-xl px-6 py-4 flex items-center justify-between">
