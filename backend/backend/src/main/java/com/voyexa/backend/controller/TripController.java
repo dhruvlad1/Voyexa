@@ -3,15 +3,20 @@ package com.voyexa.backend.controller;
 import com.voyexa.backend.DTOS.AlternativeGenerationRequestDto;
 import com.voyexa.backend.DTOS.AlternativeGenerationResponseDto;
 import com.voyexa.backend.DTOS.PlaceDto;
+import com.voyexa.backend.DTOS.ReorderItineraryRequestDto;
+import com.voyexa.backend.DTOS.TripForkRequestDto;
 import com.voyexa.backend.DTOS.TripGenerationRequestDto;
 import com.voyexa.backend.DTOS.TripGenerationResponseDto;
 import com.voyexa.backend.DTOS.TripRequestDto;
 import com.voyexa.backend.DTOS.TripResponseDto;
 import com.voyexa.backend.DTOS.TripSummaryDto;
+import com.voyexa.backend.DTOS.TripShareResponseDto;
+import com.voyexa.backend.entities.Trip;
 import com.voyexa.backend.services.ActivityAlternativeService;
 import com.voyexa.backend.services.ExternalPlaceService;
 import com.voyexa.backend.services.ItineraryService;
 import com.voyexa.backend.services.TripService;
+import com.voyexa.backend.services.TripShareService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -135,6 +140,40 @@ public class TripController {
         try {
             activityAlternativeService.applyAlternative(tripId, dayNumber, timeSlot, selectedIndex);
             return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * Reorder days in the itinerary
+     */
+    @PutMapping("/{tripId}/reorder")
+    public ResponseEntity<Void> reorderItinerary(
+            @PathVariable UUID tripId,
+            @Valid @RequestBody ReorderItineraryRequestDto requestDto) {
+        try {
+            tripService.reorderItinerary(tripId, requestDto);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * Fork (create variation) of a trip
+     */
+    @PostMapping("/{tripId}/fork")
+    public ResponseEntity<TripResponseDto> forkTrip(
+            @PathVariable UUID tripId,
+            @Valid @RequestBody TripForkRequestDto requestDto) {
+        try {
+            TripResponseDto response = tripService.forkTrip(tripId, requestDto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {

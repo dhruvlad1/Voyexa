@@ -4,6 +4,8 @@ import com.voyexa.backend.DTOS.TripGenerationRequestDto;
 import com.voyexa.backend.DTOS.TripRequestDto;
 import com.voyexa.backend.DTOS.TripResponseDto;
 import com.voyexa.backend.DTOS.TripSummaryDto;
+import com.voyexa.backend.DTOS.ReorderItineraryRequestDto;
+import com.voyexa.backend.DTOS.TripForkRequestDto;
 import com.voyexa.backend.entities.Trip;
 import com.voyexa.backend.entities.User;
 import com.voyexa.backend.repositories.TripRepository;
@@ -172,5 +174,56 @@ public class TripService {
                     "Invalid travelers value. Allowed: " + Arrays.toString(ALLOWED_GROUPS.toArray()));
         }
         return normalized;
+    }
+
+    /**
+     * Reorder days in the itinerary
+     */
+    @Transactional
+    public void reorderItinerary(UUID tripId, ReorderItineraryRequestDto requestDto) {
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new IllegalArgumentException("Trip not found with id: " + tripId));
+
+        if (requestDto.getItineraryJson() != null) {
+            trip.setItineraryJson(requestDto.getItineraryJson());
+            tripRepository.save(trip);
+        }
+    }
+
+    /**
+     * Fork (create a variation) of a trip
+     */
+    @Transactional
+    public TripResponseDto forkTrip(UUID tripId, TripForkRequestDto requestDto) {
+        Trip originalTrip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new IllegalArgumentException("Trip not found with id: " + tripId));
+
+        // Create new trip with same properties
+        Trip forkedTrip = new Trip();
+        forkedTrip.setUser(originalTrip.getUser());
+        forkedTrip.setOrigin(originalTrip.getOrigin());
+        forkedTrip.setDestination(originalTrip.getDestination());
+        forkedTrip.setStartDate(originalTrip.getStartDate());
+        forkedTrip.setEndDate(originalTrip.getEndDate());
+        forkedTrip.setDateFlexibility(originalTrip.getDateFlexibility());
+        forkedTrip.setTravelGroupType(originalTrip.getTravelGroupType());
+        forkedTrip.setAdultCount(originalTrip.getAdultCount());
+        forkedTrip.setChildCount(originalTrip.getChildCount());
+        forkedTrip.setInterests(originalTrip.getInterests());
+        forkedTrip.setOtherInterest(originalTrip.getOtherInterest());
+        forkedTrip.setAccommodationPreference(originalTrip.getAccommodationPreference());
+        forkedTrip.setTripPace(originalTrip.getTripPace());
+        forkedTrip.setBudget(originalTrip.getBudget());
+        forkedTrip.setStatus("COMPLETE");
+
+        // Use provided itinerary or copy from original
+        if (requestDto.getItineraryJson() != null) {
+            forkedTrip.setItineraryJson(requestDto.getItineraryJson());
+        } else {
+            forkedTrip.setItineraryJson(originalTrip.getItineraryJson());
+        }
+
+        Trip saved = tripRepository.save(forkedTrip);
+        return new TripResponseDto(saved.getId(), "Trip variation created: " + requestDto.getVariationName());
     }
 }
