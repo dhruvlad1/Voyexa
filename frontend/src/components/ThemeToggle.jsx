@@ -10,7 +10,7 @@ export default function ThemeToggle() {
     <button
       type="button"
       onClick={toggleTheme}
-      className={`fixed right-6 top-6 z-[70] inline-flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-md transition-colors ${
+      className={`fixed right-4 bottom-4 sm:right-6 sm:bottom-6 z-[70] inline-flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-md transition-colors ${
         isDark
           ? "border-white/20 bg-slate-900/70 text-slate-100 hover:bg-slate-800/80"
           : "border-blue-300 bg-blue-50/90 text-blue-800 hover:bg-blue-100"

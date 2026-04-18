@@ -200,7 +200,7 @@ export default function FloatingLines({
     }
 
     return isLightTheme
-      ? ["#93c5fd", "#60a5fa", "#818cf8", "#2563eb"]
+      ? ["#020617", "#0f172a", "#1e293b", "#334155"]
       : ["#4f46e5", "#9333ea", "#2563eb", "#ffffff"];
   }, [isLightTheme, linesGradient]);
 
@@ -373,18 +373,18 @@ export default function FloatingLines({
       {/* Animated gradient orbs */}
       <div
         className={`absolute top-0 -left-4 w-72 h-72 rounded-full mix-blend-normal filter blur-3xl animate-pulse ${
-          isLightTheme ? "bg-blue-300 opacity-40" : "bg-indigo-500 opacity-20"
+          isLightTheme ? "bg-blue-200 opacity-35" : "bg-indigo-500 opacity-20"
         }`}
       />
       <div
         className={`absolute top-20 right-20 w-96 h-96 rounded-full mix-blend-normal filter blur-3xl animate-pulse ${
-          isLightTheme ? "bg-indigo-300 opacity-35" : "bg-violet-400 opacity-20"
+          isLightTheme ? "bg-indigo-200 opacity-30" : "bg-violet-400 opacity-20"
         }`}
         style={{ animationDelay: "1s" }}
       />
       <div
         className={`absolute -bottom-8 left-1/3 w-80 h-80 rounded-full mix-blend-normal filter blur-3xl animate-pulse ${
-          isLightTheme ? "bg-sky-300 opacity-35" : "bg-blue-500 opacity-20"
+          isLightTheme ? "bg-sky-200 opacity-30" : "bg-blue-500 opacity-20"
         }`}
         style={{ animationDelay: "2s" }}
       />
@@ -393,7 +393,7 @@ export default function FloatingLines({
       <div
         className={`absolute inset-0 bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,#000_70%,transparent_100%)] ${
           isLightTheme
-            ? "bg-[linear-gradient(rgba(37,99,235,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(37,99,235,0.08)_1px,transparent_1px)]"
+            ? "bg-[linear-gradient(rgba(2,6,23,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(2,6,23,0.08)_1px,transparent_1px)]"
             : "bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)]"
         }`}
       />
