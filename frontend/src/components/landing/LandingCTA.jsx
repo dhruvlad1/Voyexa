@@ -3,32 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import useScrollReveal from '@/hooks/useScrollReveal';
-import { useTheme } from '@/context/ThemeContext';
 
 const LandingCTA = () => {
   const navigate = useNavigate();
-  const { theme } = useTheme();
-  const isDarkTheme = theme === 'dark';
   const sectionRef = useRef(null);
   const revealed = useScrollReveal(sectionRef);
 
   return (
     <section
       ref={sectionRef}
-      aria-label="Get started"
       className={
         `py-20 sm:py-32 transition-all duration-700 ` +
         (revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6')
       }
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div
-          className={`relative overflow-hidden rounded-3xl p-12 sm:p-16 text-center ${
-            isDarkTheme
-              ? 'bg-gradient-to-br from-slate-900 via-[#111b34] to-slate-900 border border-slate-700'
-              : 'bg-gradient-to-br from-indigo-500/20 via-violet-500/20 to-blue-500/20 backdrop-blur-sm border border-white/10'
-          }`}
-        >
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden bg-gradient-to-br from-indigo-500/20 via-violet-500/20 to-blue-500/20 backdrop-blur-sm border border-white/10 rounded-3xl p-12 sm:p-16 text-center">
           {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500 rounded-full mix-blend-normal filter blur-3xl opacity-20" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-violet-500 rounded-full mix-blend-normal filter blur-3xl opacity-20" />
@@ -45,14 +35,10 @@ const LandingCTA = () => {
                 data-testid="final-cta-btn"
                 onClick={() => navigate('/auth')}
                 size="lg"
-                className={`px-8 py-6 text-lg font-semibold rounded-xl transition-all duration-200 shadow-xl hover:shadow-2xl group focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#020617] focus-visible:outline-none ${
-                  isDarkTheme
-                    ? 'bg-indigo-700 hover:bg-indigo-600 border border-indigo-400/30 text-indigo-100'
-                    : 'bg-white text-indigo-600 hover:bg-white/90'
-                }`}
+                className="bg-white text-indigo-600 hover:bg-white/90 px-8 py-6 text-lg font-semibold rounded-xl transition-all duration-200 shadow-xl hover:shadow-2xl group"
               >
                 Get started now
-                <ArrowRight aria-hidden="true" className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
           </div>

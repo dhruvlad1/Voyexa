@@ -1,7 +1,6 @@
 import React, { useRef } from 'react';
 import { MapPin, Brain, Share2 } from 'lucide-react';
 import useScrollReveal from '@/hooks/useScrollReveal';
-import { useTheme } from '@/context/ThemeContext';
 
 const steps = [
   {
@@ -27,13 +26,10 @@ const steps = [
 const LandingHowItWorks = () => {
   const sectionRef = useRef(null);
   const revealed = useScrollReveal(sectionRef);
-  const { theme } = useTheme();
-  const isDarkTheme = theme === 'dark';
 
   return (
     <section
       ref={sectionRef}
-      aria-label="How Voyexa works"
       className={
         `py-20 sm:py-24 transition-all duration-700 ` +
         (revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6')
@@ -68,13 +64,7 @@ const LandingHowItWorks = () => {
                 )}
 
                 {/* Card */}
-                <div
-                  className={`relative rounded-2xl p-8 transition-all duration-300 h-full ${
-                    isDarkTheme
-                      ? 'bg-slate-900 border border-slate-700 hover:bg-slate-800'
-                      : 'bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10'
-                  }`}
-                >
+                <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 h-full">
                   {/* Step number */}
                   <div className="absolute -top-4 -left-4 w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center font-bold text-lg shadow-lg">
                     {step.number}
@@ -82,7 +72,7 @@ const LandingHowItWorks = () => {
 
                   {/* Icon */}
                   <div className="w-14 h-14 rounded-xl bg-indigo-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                    <Icon aria-hidden="true" className="w-7 h-7 text-indigo-400" />
+                    <Icon className="w-7 h-7 text-indigo-400" />
                   </div>
 
                   {/* Content */}

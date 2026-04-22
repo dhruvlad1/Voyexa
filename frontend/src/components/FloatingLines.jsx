@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Mesh,
   OrthographicCamera,
@@ -9,7 +9,6 @@ import {
   Vector3,
   WebGLRenderer,
 } from "three";
-import { useTheme } from "../context/ThemeContext";
 
 const vertexShader = `
 precision highp float;
@@ -168,7 +167,7 @@ function hexToVec3(hex) {
 }
 
 export default function FloatingLines({
-  linesGradient,
+  linesGradient = ["#4f46e5", "#9333ea", "#2563eb"],
   enabledWaves = ["top", "middle", "bottom"],
   lineCount = 8,
   lineDistance = 6,
@@ -182,9 +181,7 @@ export default function FloatingLines({
   mouseDamping = 0.05,
   parallax = true,
   parallaxStrength = 0.1,
-  theme: themeOverride,
 }) {
-  const { theme } = useTheme();
   const containerRef = useRef(null);
   const targetMouseRef = useRef(new Vector2(-1000, -1000));
   const currentMouseRef = useRef(new Vector2(-1000, -1000));
@@ -192,17 +189,6 @@ export default function FloatingLines({
   const currentInfluenceRef = useRef(0);
   const targetParallaxRef = useRef(new Vector2(0, 0));
   const currentParallaxRef = useRef(new Vector2(0, 0));
-  const resolvedTheme = themeOverride || theme;
-  const isLightTheme = resolvedTheme === "light";
-  const resolvedGradient = useMemo(() => {
-    if (linesGradient?.length > 0) {
-      return linesGradient;
-    }
-
-    return isLightTheme
-      ? ["#020617", "#0f172a", "#1e293b", "#334155"]
-      : ["#4f46e5", "#9333ea", "#2563eb", "#ffffff"];
-  }, [isLightTheme, linesGradient]);
 
   const getVal = (val, type) => {
     if (typeof val === "number") return val;
@@ -276,8 +262,8 @@ export default function FloatingLines({
       lineGradientCount: { value: 0 },
     };
 
-    if (resolvedGradient.length > 0) {
-      const stops = resolvedGradient.slice(0, MAX_GRADIENT_STOPS);
+    if (linesGradient?.length > 0) {
+      const stops = linesGradient.slice(0, MAX_GRADIENT_STOPS);
       uniforms.lineGradientCount.value = stops.length;
       stops.forEach((hex, i) => {
         const color = hexToVec3(hex);
@@ -355,7 +341,7 @@ export default function FloatingLines({
       }
     };
   }, [
-    resolvedGradient,
+    linesGradient,
     enabledWaves,
     lineCount,
     lineDistance,
@@ -371,32 +357,12 @@ export default function FloatingLines({
       style={{ zIndex: 0 }}
     >
       {/* Animated gradient orbs */}
-      <div
-        className={`absolute top-0 -left-4 w-72 h-72 rounded-full mix-blend-normal filter blur-3xl animate-pulse ${
-          isLightTheme ? "bg-blue-200 opacity-35" : "bg-indigo-500 opacity-20"
-        }`}
-      />
-      <div
-        className={`absolute top-20 right-20 w-96 h-96 rounded-full mix-blend-normal filter blur-3xl animate-pulse ${
-          isLightTheme ? "bg-indigo-200 opacity-30" : "bg-violet-400 opacity-20"
-        }`}
-        style={{ animationDelay: "1s" }}
-      />
-      <div
-        className={`absolute -bottom-8 left-1/3 w-80 h-80 rounded-full mix-blend-normal filter blur-3xl animate-pulse ${
-          isLightTheme ? "bg-sky-200 opacity-30" : "bg-blue-500 opacity-20"
-        }`}
-        style={{ animationDelay: "2s" }}
-      />
-      
+      <div className="absolute top-0 -left-4 w-72 h-72 bg-indigo-500 rounded-full mix-blend-normal filter blur-3xl opacity-20 animate-pulse" />
+      <div className="absolute top-20 right-20 w-96 h-96 bg-violet-400 rounded-full mix-blend-normal filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }} />
+      <div className="absolute -bottom-8 left-1/3 w-80 h-80 bg-blue-500 rounded-full mix-blend-normal filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }} />
+
       {/* Grid pattern overlay */}
-      <div
-        className={`absolute inset-0 bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,#000_70%,transparent_100%)] ${
-          isLightTheme
-            ? "bg-[linear-gradient(rgba(2,6,23,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(2,6,23,0.08)_1px,transparent_1px)]"
-            : "bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)]"
-        }`}
-      />
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
     </div>
   );
 }
