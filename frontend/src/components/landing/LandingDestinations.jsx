@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { navigateRequiringLogin } from '@/utils/auth';
 
 export const SCROLL_DURATION = 40;
 
@@ -77,7 +78,7 @@ const LandingDestinations = () => {
                   <button
                     key={`${city}-${country}-${idx}`}
                     type="button"
-                    onClick={() => navigate('/create-trip', { state: { prefilledDestination: `${city}, ${country}` } })}
+                    onClick={() => navigateRequiringLogin(navigate, '/create-trip', { prefilledDestination: `${city}, ${country}` })}
                     className="w-44 h-28 sm:w-72 sm:h-44 md:w-80 md:h-48 flex-shrink-0 rounded-2xl overflow-hidden relative cursor-pointer transition-transform duration-300 hover:scale-105 hover:ring-1 hover:ring-white/20 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#020617] focus-visible:outline-none"
                     style={
                       typeof image === 'string' && image.length > 0
