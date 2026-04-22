@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Calendar, MapPin, Compass, Clock, Plane, Sparkles, ChevronRight } from "lucide-react";
 
 const MyTrips = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [trips, setTrips] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
+    const searchQuery = (new URLSearchParams(location.search).get("search") || "").trim();
+    const normalizedSearchQuery = searchQuery.toLowerCase();
 
     useEffect(() => {
         const fetchTrips = async () => {
@@ -69,6 +72,24 @@ const MyTrips = () => {
         });
     };
 
+    const filteredTrips = normalizedSearchQuery
+        ? trips.filter((trip) => {
+            const searchableText = [
+                trip.destination,
+                trip.origin,
+                trip.status,
+                trip.startDate,
+                trip.endDate,
+                trip.budget,
+                trip.travelGroupType
+            ]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase();
+            return searchableText.includes(normalizedSearchQuery);
+        })
+        : trips;
+
     return (
         <div className="relative min-h-screen w-full bg-transparent text-slate-200 overflow-x-hidden">
             <div className="relative z-10">
@@ -91,6 +112,11 @@ const MyTrips = () => {
                         <p className="text-slate-400 text-lg font-medium max-w-xl">
                             All your AI-generated travel itineraries in one place. Relive your past journeys or get ready for upcoming adventures.
                         </p>
+                        {searchQuery && (
+                            <p className="mt-4 text-sm font-semibold text-indigo-300">
+                                Search results for: "{searchQuery}"
+                            </p>
+                        )}
                     </header>
 
                     {isLoading ? (
@@ -125,9 +151,16 @@ const MyTrips = () => {
                                  <Sparkles size={20} /> Build Itinerary
                              </button>
                         </div>
+                    ) : filteredTrips.length === 0 ? (
+                        <div className="bg-[#0a0f1d]/60 border border-white/10 p-12 rounded-[3rem] text-center backdrop-blur-md flex flex-col items-center justify-center py-20">
+                            <h2 className="text-3xl font-black text-white mb-4">No matching trips</h2>
+                            <p className="text-slate-400 font-medium max-w-md">
+                                We couldn't find any trips matching "{searchQuery}".
+                            </p>
+                        </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {trips.map((trip) => (
+                            {filteredTrips.map((trip) => (
                                 <div 
                                     key={trip.id} 
                                     className="group bg-[#0a0f1d]/80 backdrop-blur-md border border-white/10 hover:border-indigo-500/50 rounded-3xl overflow-hidden shadow-xl hover:shadow-indigo-500/20 transition-all duration-300 flex flex-col cursor-pointer"

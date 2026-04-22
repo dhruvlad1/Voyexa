@@ -12,8 +12,7 @@ import {
   Users,
   ChevronRight,
   Menu,
-  ChevronLeft,
-  User
+  ChevronLeft
 } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -28,6 +27,9 @@ const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [trendingPlaces, setTrendingPlaces] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [myTrips, setMyTrips] = useState([]);
+  const [tripSearchQuery, setTripSearchQuery] = useState("");
+  const [isTripSearchFocused, setIsTripSearchFocused] = useState(false);
   const [userName, setUserName] = useState("");
   const [userData, setUserData] = useState({ name: "", email: "", phone: "" });
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -75,6 +77,24 @@ const Dashboard = () => {
     };
     fetchTrending();
   }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchMyTrips = async () => {
+      try {
+        const response = await fetch(`http://localhost:8080/api/trips/user/${userId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setMyTrips(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch trips for search suggestions:", error);
+      }
+    };
+
+    fetchMyTrips();
+  }, [userId]);
 
   // Initialize Lenis smooth scroll + GSAP parallax
   useEffect(() => {
@@ -272,6 +292,40 @@ const Dashboard = () => {
     };
   }, [isLoading, trendingPlaces]);
 
+  const handleTripSearchSubmit = (event) => {
+    event.preventDefault();
+    const trimmedQuery = tripSearchQuery.trim();
+    if (!trimmedQuery) {
+      navigate("/my-trips");
+      return;
+    }
+    navigate(`/my-trips?search=${encodeURIComponent(trimmedQuery)}`);
+  };
+
+  const normalizedTripSearchQuery = tripSearchQuery.trim().toLowerCase();
+  const tripSuggestions = normalizedTripSearchQuery
+    ? myTrips
+        .filter((trip) => {
+          const searchableText = [
+            trip.destination,
+            trip.origin,
+            trip.status,
+            trip.startDate,
+            trip.endDate
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          return searchableText.includes(normalizedTripSearchQuery);
+        })
+        .slice(0, 6)
+    : [];
+
+  const handleSuggestionSelect = (trip) => {
+    const suggestionQuery = trip.destination || trip.origin || tripSearchQuery.trim();
+    navigate(`/my-trips?search=${encodeURIComponent(suggestionQuery)}`);
+  };
+
   return (
       <div className="min-h-screen bg-transparent relative flex">
 
@@ -374,14 +428,47 @@ const Dashboard = () => {
 
             {/* Header inside hero */}
             <div className="absolute top-0 left-0 right-0 flex justify-between items-center px-6 lg:px-12 py-8 z-20">
-              <div className={`${!isSidebarOpen ? "ml-16" : "ml-0"} transition-all duration-500 relative w-64 md:w-96 hidden sm:block`}>
+              <form
+                onSubmit={handleTripSearchSubmit}
+                className={`${!isSidebarOpen ? "ml-16" : "ml-0"} transition-all duration-500 relative w-64 md:w-96 hidden sm:block`}
+              >
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input
                     type="text"
                     placeholder="Search itineraries..."
+                    value={tripSearchQuery}
+                    onChange={(event) => setTripSearchQuery(event.target.value)}
+                    onFocus={() => setIsTripSearchFocused(true)}
+                    onBlur={() => setTimeout(() => setIsTripSearchFocused(false), 120)}
+                    aria-label="Search my trips"
                     className="w-full pl-12 pr-4 py-3 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all text-white placeholder:text-slate-500"
                 />
-              </div>
+                {isTripSearchFocused && normalizedTripSearchQuery && (
+                  <div className="absolute top-[calc(100%+0.5rem)] left-0 right-0 bg-[#0a0f1d]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-40">
+                    {tripSuggestions.length > 0 ? (
+                      tripSuggestions.map((trip) => (
+                        <button
+                          key={trip.id}
+                          type="button"
+                          onMouseDown={() => handleSuggestionSelect(trip)}
+                          className="w-full px-4 py-3 text-left hover:bg-white/5 transition-colors border-b border-white/5 last:border-b-0"
+                        >
+                          <p className="text-white font-semibold text-sm truncate">
+                            {trip.destination || "Untitled trip"}
+                          </p>
+                          <p className="text-slate-400 text-xs truncate">
+                            From {trip.origin || "Unknown"} • {trip.startDate || "Date TBD"}
+                          </p>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-slate-400 text-sm">
+                        No trips found in your saved trips.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </form>
 
               <button
                   onClick={() => navigate("/create-trip")}
