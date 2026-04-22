@@ -2,22 +2,18 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plane, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useTheme } from '@/context/ThemeContext';
-import { navigateRequiringLogin } from '@/utils/auth';
 
 const LandingHero = () => {
   const navigate = useNavigate();
-  const { theme } = useTheme();
-  const isDarkTheme = theme === 'dark';
 
   return (
-    <header className="relative overflow-hidden" aria-label="Voyexa introduction">
+    <header className="relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 sm:pt-32 sm:pb-40">
         <div className="text-center space-y-8">
           {/* Logo/Brand */}
           <div className="flex justify-center items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center">
-              <Plane aria-hidden="true" className="w-6 h-6 text-white" />
+              <Plane className="w-6 h-6 text-white" />
             </div>
             <span className="text-2xl font-bold">Voyexa</span>
           </div>
@@ -47,25 +43,17 @@ const LandingHero = () => {
               data-testid="hero-get-started-btn"
               onClick={() => navigate('/auth')}
               size="lg"
-              className={`px-8 py-6 text-lg font-semibold rounded-xl transition-all duration-200 shadow-lg w-full sm:w-auto focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#020617] focus-visible:outline-none ${
-                isDarkTheme
-                  ? 'bg-indigo-600 hover:bg-indigo-500 text-white hover:shadow-indigo-500/35'
-                  : 'bg-indigo-500 hover:bg-indigo-600 text-white hover:shadow-indigo-500/25'
-              }`}
+              className="bg-indigo-500 hover:bg-indigo-600 text-white px-8 py-6 text-lg font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-indigo-500/25 w-full sm:w-auto"
             >
-              <Sparkles aria-hidden="true" className="w-5 h-5 mr-2" />
+              <Sparkles className="w-5 h-5 mr-2" />
               Get started
             </Button>
             <Button
               data-testid="hero-plan-trip-btn"
-              onClick={() => navigateRequiringLogin(navigate, '/create-trip')}
+              onClick={() => navigate('/create-trip')}
               size="lg"
               variant="outline"
-              className={`border-2 px-8 py-6 text-lg font-semibold rounded-xl transition-all duration-200 w-full sm:w-auto focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#020617] focus-visible:outline-none ${
-                isDarkTheme
-                  ? 'border-slate-700 hover:border-indigo-400/60 bg-slate-900 hover:bg-slate-800 text-slate-100'
-                  : 'border-white/20 hover:border-white/40 bg-white/5 text-white'
-              }`}
+              className="border-2 border-white/20 hover:border-white/40 bg-white/5 backdrop-blur-sm text-white px-8 py-6 text-lg font-semibold rounded-xl transition-all duration-200 w-full sm:w-auto"
             >
               Plan a trip
             </Button>
@@ -73,15 +61,11 @@ const LandingHero = () => {
 
           {/* Sample itinerary preview (desktop only) */}
           <div className="hidden md:block pt-10">
-              <div className="max-w-2xl mx-auto text-left">
-                <p className="text-xs font-semibold uppercase tracking-wider text-white/50 mb-3">
-                  Sample itinerary
-                </p>
-              <div
-                className={`rounded-2xl p-6 ${
-                  isDarkTheme ? 'bg-slate-900 border border-slate-700' : 'bg-white/5 backdrop-blur-sm border border-white/10'
-                }`}
-              >
+            <div className="max-w-2xl mx-auto text-left">
+              <p className="text-xs font-semibold uppercase tracking-wider text-white/50 mb-3">
+                Sample itinerary
+              </p>
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
                 <div className="flex items-start justify-between gap-6 mb-5">
                   <div>
                     <h3 className="text-lg font-bold tracking-tight">Tokyo, Japan</h3>
@@ -94,11 +78,7 @@ const LandingHero = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <div
-                    className={`flex items-center justify-between gap-4 rounded-xl px-4 py-3 ${
-                      isDarkTheme ? 'border border-slate-700 bg-slate-800' : 'border border-white/10 bg-white/5'
-                    }`}
-                  >
+                  <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                     <div className="flex items-center gap-3">
                       <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
                       <span className="text-sm font-semibold text-white/80">Morning</span>
@@ -106,11 +86,7 @@ const LandingHero = () => {
                     <span className="text-sm text-white">Senso-ji Temple</span>
                   </div>
 
-                  <div
-                    className={`flex items-center justify-between gap-4 rounded-xl px-4 py-3 ${
-                      isDarkTheme ? 'border border-slate-700 bg-slate-800' : 'border border-white/10 bg-white/5'
-                    }`}
-                  >
+                  <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                     <div className="flex items-center gap-3">
                       <span className="w-2.5 h-2.5 rounded-full bg-sky-400" />
                       <span className="text-sm font-semibold text-white/80">Afternoon</span>
@@ -118,11 +94,7 @@ const LandingHero = () => {
                     <span className="text-sm text-white">Shibuya Crossing</span>
                   </div>
 
-                  <div
-                    className={`flex items-center justify-between gap-4 rounded-xl px-4 py-3 ${
-                      isDarkTheme ? 'border border-slate-700 bg-slate-800' : 'border border-white/10 bg-white/5'
-                    }`}
-                  >
+                  <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                     <div className="flex items-center gap-3">
                       <span className="w-2.5 h-2.5 rounded-full bg-violet-400" />
                       <span className="text-sm font-semibold text-white/80">Evening</span>
