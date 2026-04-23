@@ -383,10 +383,25 @@ const ItineraryResult = () => {
                         <div className="bg-slate-900 border border-white/10 rounded-lg p-4">
                             <h4 className="text-lg font-bold text-white mb-1">{originalActivity?.title}</h4>
                             <p className="text-sm text-slate-300 mb-3">{originalActivity?.description}</p>
-                            <div className="flex items-center gap-2 text-xs text-slate-400">
+                            <div className="flex items-center gap-2 text-xs text-slate-400 mb-3">
                                 <MapPin size={14} />
                                 {originalActivity?.location}
                             </div>
+                            {originalActivity?.matchingProfiles && originalActivity?.matchingProfiles.length > 0 && (
+                                <div className="mt-3 pt-3 border-t border-white/10">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mb-2">👥 Perfect for:</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {originalActivity.matchingProfiles.map((profile, idx) => (
+                                            <span 
+                                                key={idx}
+                                                className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/30 text-blue-200 border border-blue-400/30"
+                                            >
+                                                ✨ {profile}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -416,6 +431,23 @@ const ItineraryResult = () => {
                                             <MapPin size={14} />
                                             {altActivity?.location}
                                         </div>
+
+                                        {/* Matching Profiles for Alternatives */}
+                                        {altActivity?.matchingProfiles && altActivity?.matchingProfiles.length > 0 && (
+                                            <div className="mb-4 p-2 rounded bg-blue-500/10 border border-blue-500/20">
+                                                <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mb-2">👥 Perfect for:</p>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {altActivity.matchingProfiles.map((profile, pIdx) => (
+                                                        <span 
+                                                            key={pIdx}
+                                                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-blue-500/30 text-blue-200 border border-blue-400/30"
+                                                        >
+                                                            ✨ {profile}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
 
                                         <button
                                             onClick={() => handleApplyAlternative(dayNumber, timeSlot, idx)}
@@ -765,6 +797,23 @@ const ItineraryResult = () => {
                                 </span>
                             )}
                         </div>
+
+                        {/* Matching Profiles Section */}
+                        {data.activity.matchingProfiles && data.activity.matchingProfiles.length > 0 && (
+                            <div className="mb-2">
+                                <p className="text-[9px] font-bold text-cyan-400 mb-1">Perfect for</p>
+                                <div className="flex flex-wrap gap-1">
+                                    {data.activity.matchingProfiles.map((profile, idx) => (
+                                        <span
+                                            key={idx}
+                                            className="px-2 py-0.5 rounded text-[9px] font-bold bg-cyan-500/20 text-cyan-200 border border-cyan-400/40"
+                                        >
+                                            {profile}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Get Alternatives Button */}
                         <button

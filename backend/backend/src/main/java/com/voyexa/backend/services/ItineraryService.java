@@ -337,6 +337,10 @@ public class ItineraryService {
                 - Include estimated time and cost tier where required.
                 - Use simple, clean, frontend-friendly text.
                 - IMPORTANT: The "whyItFits" field should EXPLICITLY reference profile preferences, not generic reasons.
+                - CRITICAL: The "matchingProfiles" array MUST list the exact names of profiles that this activity is tailored for.
+                - If an activity appeals to multiple profiles, include ALL matching profile names in the array.
+                - If an activity is for general enjoyment without specific profile alignment, use an empty array [].
+                - Example: if activity appeals to "John" (hiker) and "Sarah" (photographer), matchingProfiles should be ["John", "Sarah"].
 
                 OUTPUT JSON SCHEMA:
                 {
@@ -366,7 +370,8 @@ public class ItineraryService {
                           "bookingInfo": {
                             "searchQuery": "string or null",
                             "bookingLink": null
-                          }
+                          },
+                          "matchingProfiles": ["Profile Name 1", "Profile Name 2"]
                         },
                         "whyItFits": "string"
                       },
@@ -379,7 +384,8 @@ public class ItineraryService {
                           "bookingInfo": {
                             "searchQuery": "string or null",
                             "bookingLink": null
-                          }
+                          },
+                          "matchingProfiles": ["Profile Name 1", "Profile Name 2"]
                         },
                         "estimatedTime": "string",
                         "costTier": "Free | $ | $$ | $$$"
@@ -393,7 +399,8 @@ public class ItineraryService {
                           "bookingInfo": {
                             "searchQuery": "string or null",
                             "bookingLink": null
-                          }
+                          },
+                          "matchingProfiles": ["Profile Name 1", "Profile Name 2"]
                         },
                         "restaurantType": "string"
                       },
@@ -412,6 +419,9 @@ public class ItineraryService {
                 - IF PROFILES WERE PROVIDED: Verify all dietary restrictions are respected in dining recommendations.
                 - IF PROFILES WERE PROVIDED: Verify the "whyItFits" field mentions profile names/preferences.
                 - IF PROFILES WERE PROVIDED: Verify activities are distributed to represent all profiles across the trip.
+                - IF PROFILES WERE PROVIDED: Verify EVERY activity has a "matchingProfiles" array that correctly lists profile names who benefit from that activity.
+                - IF NO PROFILES WERE PROVIDED: Ensure "matchingProfiles" arrays are either empty [] or omitted.
+                - Verify that all interests (both user-inputted and profile-based) are represented across the itinerary.
                 """.formatted(
                 dto.getOrigin(),
                 dto.getDestination(),
@@ -506,6 +516,12 @@ public class ItineraryService {
                   - Verify activities are diverse enough to appeal to different profiles (not all activities catering to one profile).
                   - Verify that mobility constraints from profiles are respected (no activities impossible for the most limited profile).
                   - Verify that cultural/nationality preferences are considered where relevant.
+                  - Verify EVERY activity has a valid "matchingProfiles" array with correct profile names from the input.
+                  - Verify the "matchingProfiles" array lists ONLY profile names that actually benefit from that activity.
+                  - Verify that all profiles are represented in at least some activities across the trip (no profile left out).
+                - INTERESTS VALIDATION:
+                  - Verify that user-inputted interests are reflected across activities (not just profile interests).
+                  - Verify that the combination of profile interests and user interests work together harmoniously.
 
                 QUALITY RULES:
                 - Keep the itinerary realistic for the destination and dates.
@@ -559,7 +575,8 @@ public class ItineraryService {
                           "bookingInfo": {
                             "searchQuery": "string or null",
                             "bookingLink": null
-                          }
+                          },
+                          "matchingProfiles": ["Profile Name 1", "Profile Name 2"]
                         },
                         "whyItFits": "string"
                       },
@@ -572,7 +589,8 @@ public class ItineraryService {
                           "bookingInfo": {
                             "searchQuery": "string or null",
                             "bookingLink": null
-                          }
+                          },
+                          "matchingProfiles": ["Profile Name 1", "Profile Name 2"]
                         },
                         "estimatedTime": "string",
                         "costTier": "Free | $ | $$ | $$$"
@@ -586,7 +604,8 @@ public class ItineraryService {
                           "bookingInfo": {
                             "searchQuery": "string or null",
                             "bookingLink": null
-                          }
+                          },
+                          "matchingProfiles": ["Profile Name 1", "Profile Name 2"]
                         },
                         "restaurantType": "string"
                       },
