@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -266,24 +265,51 @@ public class ItineraryService {
 
                 PLANNING RULES:
                 - Build a real-world feasible itinerary for the destination.
-                - Use only real, well-known places, neighborhoods, attractions, and activity types.
-                - Do not invent fake hotel names, fake attractions, fake booking links, or exact live prices.
+                - Use ONLY real, well-known, verifiable places, neighborhoods, attractions, and establishments.
+                - CRITICAL FOR IMAGE LOOKUP: Every single "location" field must be a real, existing place that can be found on Google Maps and Pexels.
+                - Do not invent fake hotel names, fake attractions, fake restaurants, fake neighborhoods, or fake landmarks.
+                
+                TRAVELER PROFILE PERSONALIZATION (PRIMARY FOCUS):
+                - If Selected Traveler Profiles are provided, they are the PRIMARY driver of itinerary design.
+                - Do NOT treat profiles as secondary or equal-weight to user inputs.
+                - Profile preferences OVERRIDE or HEAVILY INFLUENCE activity selection when applicable.
+                - For each selected profile, ensure at least 2-3 activities per day are tailored to THAT profile's interests/needs.
+                - When multiple profiles exist, create a BALANCED ROTATION of activities (Day 1 focus on Profile A, Day 2 emphasize Profile B, Day 3 compromise, etc.).
+                - MANDATORY profile incorporation:
+                  - Interests: Every activity must have a clear link to at least one profile's interests.
+                  - Dietary Preferences: EVERY meal/dining activity must respect dietary restrictions (vegetarian, halal, gluten-free, vegan, etc.).
+                  - Mobility Level: Every activity must be physically feasible for the profile with the most limitations.
+                  - Nationality/Culture: Activities should resonate with profile's cultural background or interests where relevant.
+                  - Age/Relation: Family-friendly vs. adult-focused activities must match profile type.
+                - In the activity description, explicitly mention HOW it aligns with profile preferences (e.g., "Perfect for [Profile Name]'s interest in hiking").
+                - If a user interest conflicts with a profile preference, PRIORITIZE the profile preference (profiles are explicit user choices).
+
+                LOCATION FIELD REQUIREMENTS (CRITICAL):
+                - For restaurants: use ONLY well-known real restaurants (e.g., "Ichiran Ramen - Shibuya", "Sukiyabashi Jiro - Ginza")
+                - For landmarks/attractions: use ONLY famous, well-documented places (e.g., "Senso-ji Temple - Asakusa", "Tokyo Skytree - Sumida")
+                - For neighborhoods: use ONLY real, searchable areas (e.g., "Shibuya", "Shinjuku", "Asakusa")
+                - For hotels/accommodations: use ONLY real, bookable properties from Booking.com, Airbnb, etc.
+                - If exact venue/restaurant name is unknown, use neighborhood + activity (e.g., "Shibuya, Tokyo")
+                - Every location MUST be searchable on Pexels WITHOUT modification
+                - AVOID generic phrases like "a nice coffee shop" → use "Blue Bottle Coffee - Shibuya, Tokyo"
+                - AVOID ambiguous names → use full name + area ("Restaurant Name - District")
+                - AVOID outdated places → verify all establishments are currently operating
+                - NEVER use placeholder-like names → use real, specific, verifiable venue names
+                - Example BAD location: "A cozy cafe near the station" → Example GOOD location: "Starbucks Reserve - Shibuya Station"
+                
+                OTHER PLANNING RULES:
                 - If exact pricing or booking data is unknown, use null or a realistic estimate label such as "$$" or "approximate".
                 - Keep activities geographically clustered within each day.
                 - Do not overload a day beyond the specified pace.
                 - Do not repeat the same attraction, area, or primary activity across multiple days.
-                - Strongly prioritize the listed interests.
-                - If interests are empty, create a balanced mix of iconic sightseeing, local food, and leisure.
-                - If Selected Traveler Profiles are provided, give equal weight to (a) direct user trip inputs and (b) selected profile preferences.
-                - Explicitly incorporate selected profile interests, mobility level, and dietary preferences into activity and dining choices.
-                - Balance preferences across the full itinerary so user-level inputs and different selected profiles are all represented.
-                - If user inputs and profile preferences conflict, choose compromise options or alternate priorities by day/time slot while keeping the plan cohesive and practical.
+                - Strongly prioritize the listed interests (especially from profiles).
+                - If interests are empty but profiles exist, use profile interests instead.
                 - Budget must influence the recommendations:
                   - Cheap → mostly Free or $
                   - Moderate → mix of $ and $$
                   - Luxury → mostly $$ and $$$
                 - Accommodation advice must match both {accommodationType} and {budget}.
-                - Every accommodation mentioned must have a corresponding booking option.
+                - Every accommodation mentioned must have a corresponding booking option with real venue names.
                 - For each accommodation, provide a reliable booking URL from a well-known platform (Booking.com, Airbnb, Agoda, etc.).
                 - Booking URLs must point to the specific property; if exact property link is unavailable, provide the closest accurate listing.
                 - All accommodation links must be fully qualified HTTPS URLs on official booking platform domains only.
@@ -298,26 +324,19 @@ public class ItineraryService {
                   - Packed → full day with efficient sequencing
                 - Traveler-type style guidance: %s
 
-                ALTERNATIVES GENERATION:
-                - For each time slot (morning, afternoon, evening), generate 2 alternative activities.
-                - Each alternative must be completely different from the main activity and from each other.
-                - Alternatives should appeal to different preferences while matching the trip's budget and destination.
-                - Provide varied activity types across alternatives (e.g., cultural, adventure, relaxation, food-focused, shopping, local experience).
-                - Each alternative must fit the time slot duration and cost tier of the main activity.
-                - Do not repeat any activity (main or alternative) across the entire itinerary.
-                - Alternatives should be realistic and available in the destination.
-                - When profiles are selected, alternatives should offer preference coverage for different selected profiles where possible.
 
                 CONTENT GUIDELINES:
-                - Trip summary should feel personalized and concise.
+                - Trip summary should feel personalized and concise, WITH EXPLICIT MENTIONS of selected profiles.
+                - Trip summary should highlight how the itinerary caters to each profile's unique needs/interests.
                 - Accommodation advice should recommend a suitable area or neighborhood, not a fake hotel.
                 - Keep accommodation formatting clean and consistent.
                 - Include structured accommodation booking entries so UI can render a "Check Details" button right after accommodation details.
-                - Activity descriptions should be practical and specific.
-                - Every activity object (main + alternatives) must include "imageQuery": a short one-line photo search phrase containing the place and scene (e.g., "Shibuya crossing Tokyo at night").
+                - Activity descriptions should be practical, specific, AND EXPLICITLY MENTION PROFILE ALIGNMENT.
+                - For each activity, explain WHY it matches the selected profiles (e.g., "This museum is perfect for art lovers like [Profile]").
+                - Every activity's "location" field must be specific, real, and Pexels-searchable (e.g., "Senso-ji Temple - Asakusa" not "Famous temple in Tokyo").
                 - Include estimated time and cost tier where required.
                 - Use simple, clean, frontend-friendly text.
-                - For each activity time slot, generate 2 alternative activities that offer different experiences.
+                - IMPORTANT: The "whyItFits" field should EXPLICITLY reference profile preferences, not generic reasons.
 
                 OUTPUT JSON SCHEMA:
                 {
@@ -349,21 +368,7 @@ public class ItineraryService {
                             "bookingLink": null
                           }
                         },
-                        "whyItFits": "string",
-                        "alternatives": [
-                          {
-                            "activity": {
-                              "title": "string",
-                              "description": "string",
-                              "location": "string",
-                              "imageQuery": "string",
-                              "bookingInfo": {
-                                "searchQuery": "string or null",
-                                "bookingLink": null
-                              }
-                            }
-                          }
-                        ]
+                        "whyItFits": "string"
                       },
                       "afternoon": {
                         "activity": {
@@ -377,21 +382,7 @@ public class ItineraryService {
                           }
                         },
                         "estimatedTime": "string",
-                        "costTier": "Free | $ | $$ | $$$",
-                        "alternatives": [
-                          {
-                            "activity": {
-                              "title": "string",
-                              "description": "string",
-                              "location": "string",
-                              "imageQuery": "string",
-                              "bookingInfo": {
-                                "searchQuery": "string or null",
-                                "bookingLink": null
-                              }
-                            }
-                          }
-                        ]
+                        "costTier": "Free | $ | $$ | $$$"
                       },
                       "evening": {
                         "activity": {
@@ -404,21 +395,7 @@ public class ItineraryService {
                             "bookingLink": null
                           }
                         },
-                        "restaurantType": "string",
-                        "alternatives": [
-                          {
-                            "activity": {
-                              "title": "string",
-                              "description": "string",
-                              "location": "string",
-                              "imageQuery": "string",
-                              "bookingInfo": {
-                                "searchQuery": "string or null",
-                                "bookingLink": null
-                              }
-                            }
-                          }
-                        ]
+                        "restaurantType": "string"
                       },
                       "travelTip": "string"
                     }
@@ -430,10 +407,11 @@ public class ItineraryService {
                 - Make sure the itinerary is realistic.
                 - Make sure the pacing matches the user's preference.
                 - Make sure the last day ends with departure logistics.
-                - Make sure each time slot includes at least 2 alternative activities.
-                - Make sure no activities or alternatives are repeated across the itinerary.
-                - Make sure alternatives offer meaningful variety in activity types.
                 - Make sure every accommodation mention has a matching accommodationOptions entry with a usable checkDetailsUrl.
+                - IF PROFILES WERE PROVIDED: Verify that each day has activities explicitly tailored to selected profiles.
+                - IF PROFILES WERE PROVIDED: Verify all dietary restrictions are respected in dining recommendations.
+                - IF PROFILES WERE PROVIDED: Verify the "whyItFits" field mentions profile names/preferences.
+                - IF PROFILES WERE PROVIDED: Verify activities are distributed to represent all profiles across the trip.
                 """.formatted(
                 dto.getOrigin(),
                 dto.getDestination(),
@@ -520,11 +498,14 @@ public class ItineraryService {
                 - Keep all values as plain JSON types.
                 - Ensure all strings are properly quoted.
                 - Ensure the output is parsable by standard JSON parsers.
-                - Ensure each time slot includes an "alternatives" array with at least 2 alternatives.
-                - Ensure each alternative contains the required activity structure.
-                - Ensure every activity object (main + alternatives) contains a non-empty "imageQuery" string.
                 - Ensure "accommodationOptions" exists and remains an array when accommodation is mentioned.
                 - Ensure each accommodation checkDetailsUrl is a valid HTTPS URL on an official booking domain.
+                - PROFILE VALIDATION (if profiles were provided in input):
+                  - Verify dietary restrictions are respected in ALL meal recommendations.
+                  - Verify each activity's "whyItFits" field mentions at least one profile name or preference.
+                  - Verify activities are diverse enough to appeal to different profiles (not all activities catering to one profile).
+                  - Verify that mobility constraints from profiles are respected (no activities impossible for the most limited profile).
+                  - Verify that cultural/nationality preferences are considered where relevant.
 
                 QUALITY RULES:
                 - Keep the itinerary realistic for the destination and dates.
@@ -533,7 +514,6 @@ public class ItineraryService {
                 - Ensure interests are reflected naturally across the trip.
                 - Ensure budget alignment is reasonable.
                 - Do not repeat the same place or primary activity across multiple days.
-                - Do not repeat main activities within the alternatives of the same time slot.
                 - Day 1 must include arrival logistics and check-in.
                 - Final day must include departure logistics returning to origin.
                 - If booking links are not available, keep bookingLink as null.
@@ -541,7 +521,6 @@ public class ItineraryService {
                 - If any accommodation URL is invalid or uses an untrusted domain, replace it with an official platform search-results URL.
                 - If estimated costs are not known exactly, keep them as cost tiers only.
                 - Do not invent new facts that were not present in the source unless required to repair structure or realism.
-                - Ensure alternatives offer meaningful variety in activity types and experiences.
                 - Ensure each accommodation mentioned in accommodationAdvice has a corresponding accommodationOptions item.
 
                 REPAIR PRIORITY:
@@ -582,21 +561,7 @@ public class ItineraryService {
                             "bookingLink": null
                           }
                         },
-                        "whyItFits": "string",
-                        "alternatives": [
-                          {
-                            "activity": {
-                              "title": "string",
-                              "description": "string",
-                              "location": "string",
-                              "imageQuery": "string",
-                              "bookingInfo": {
-                                "searchQuery": "string or null",
-                                "bookingLink": null
-                              }
-                            }
-                          }
-                        ]
+                        "whyItFits": "string"
                       },
                       "afternoon": {
                         "activity": {
@@ -610,21 +575,7 @@ public class ItineraryService {
                           }
                         },
                         "estimatedTime": "string",
-                        "costTier": "Free | $ | $$ | $$$",
-                        "alternatives": [
-                          {
-                            "activity": {
-                              "title": "string",
-                              "description": "string",
-                              "location": "string",
-                              "imageQuery": "string",
-                              "bookingInfo": {
-                                "searchQuery": "string or null",
-                                "bookingLink": null
-                              }
-                            }
-                          }
-                        ]
+                        "costTier": "Free | $ | $$ | $$$"
                       },
                       "evening": {
                         "activity": {
@@ -637,21 +588,7 @@ public class ItineraryService {
                             "bookingLink": null
                           }
                         },
-                        "restaurantType": "string",
-                        "alternatives": [
-                          {
-                            "activity": {
-                              "title": "string",
-                              "description": "string",
-                              "location": "string",
-                              "imageQuery": "string",
-                              "bookingInfo": {
-                                "searchQuery": "string or null",
-                                "bookingLink": null
-                              }
-                            }
-                          }
-                        ]
+                        "restaurantType": "string"
                       },
                       "travelTip": "string"
                     }
