@@ -25,9 +25,20 @@ geoapify:
 
 gemini:
   api:
-    planner-key: ${GEMINI_PLANNER_API_KEY}
-    validator-key: ${GEMINI_VALIDATOR_API_KEY}
+    # Master pool (planner can use all keys)
+    keys: ${GEMINI_API_KEYS:${GEMINI_PLANNER_API_KEY:}}
+    # Limited pool (validator/dashboard/alternatives use this)
+    limited-keys: ${GEMINI_LIMITED_API_KEYS:${GEMINI_VALIDATOR_API_KEY:}}
+    # Backward compatible legacy names
+    planner-key: ${GEMINI_PLANNER_API_KEY:}
+    validator-key: ${GEMINI_VALIDATOR_API_KEY:}
+    # API Endpoint
     url: https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent
+    # Tuning parameters
+    cooldown-seconds: ${GEMINI_COOLDOWN_SECONDS:30}
+    max-attempts: ${GEMINI_MAX_ATTEMPTS:10}
+    initial-backoff-ms: ${GEMINI_INITIAL_BACKOFF_MS:200}
+    max-backoff-ms: ${GEMINI_MAX_BACKOFF_MS:1500}
 
 pexels:
   api-key: ${PEXELS_API_KEY:YOUR_PEXELS_API_KEY}

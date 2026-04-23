@@ -6,25 +6,20 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.voyexa.backend.DTOS.TripGenerationRequestDto;
 import com.voyexa.backend.entities.TravelerProfile;
 import com.voyexa.backend.repositories.TravelerProfileRepository;
+import com.voyexa.backend.services.gemini.GeminiClient;
+import com.voyexa.backend.services.gemini.GeminiTask;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -33,44 +28,18 @@ import java.util.stream.Stream;
 public class ItineraryService {
 
     private static final Logger log = LoggerFactory.getLogger(ItineraryService.class);
-    private static final int EXPECTED_PLANNER_KEYS = 4;
-    private static final int EXPECTED_VALIDATOR_KEYS = 2;
 
-    private final RestTemplate restTemplate;
-    private final Queue<String> plannerKeys = new ConcurrentLinkedQueue<>();
-    private final Queue<String> validatorKeys = new ConcurrentLinkedQueue<>();
-    private final String geminiApiUrl;
+    private final GeminiClient geminiClient;
     private final PexelsImageService pexelsImageService;
     private final TravelerProfileRepository travelerProfileRepository;
     private final ObjectMapper objectMapper;
 
     public ItineraryService(
-            @Value("${gemini.api.planner-key}") String plannerApiKeyStr,
-            @Value("${gemini.api.validator-key}") String validatorApiKeyStr,
-            @Value("${gemini.api.url}") String geminiApiUrl,
+            GeminiClient geminiClient,
             PexelsImageService pexelsImageService,
             TravelerProfileRepository travelerProfileRepository
     ) {
-        this.restTemplate = new RestTemplate();
-
-        if (plannerApiKeyStr != null) {
-            Arrays.stream(plannerApiKeyStr.split(","))
-                    .map(String::trim)
-                    .filter(k -> !k.isEmpty() && !k.startsWith("YOUR_"))
-                    .forEach(plannerKeys::offer);
-        }
-
-        if (validatorApiKeyStr != null) {
-            Arrays.stream(validatorApiKeyStr.split(","))
-                    .map(String::trim)
-                    .filter(k -> !k.isEmpty() && !k.startsWith("YOUR_"))
-                    .forEach(validatorKeys::offer);
-        }
-
-        warnIfUnexpectedPoolSize("planner", plannerKeys, EXPECTED_PLANNER_KEYS);
-        warnIfUnexpectedPoolSize("validator", validatorKeys, EXPECTED_VALIDATOR_KEYS);
-
-        this.geminiApiUrl = geminiApiUrl;
+        this.geminiClient = geminiClient;
         this.pexelsImageService = pexelsImageService;
         this.travelerProfileRepository = travelerProfileRepository;
         this.objectMapper = new ObjectMapper();
@@ -82,7 +51,14 @@ public class ItineraryService {
         log.info("Calling Planner Agent...");
 
         // Step 2: Call the Planner Agent
-        String plannerResponseJson = callAiModel(plannerPrompt, plannerKeys);
+        String plannerResponseJson;
+        try {
+            plannerResponseJson = geminiClient.generateContent(plannerPrompt, GeminiTask.PLANNER);
+        } catch (Exception e) {
+            log.error("Planner agent failed: {}", e.getMessage());
+            return "{\"error\": \"Planner agent failed to return a response.\"}";
+        }
+
         if (plannerResponseJson == null || plannerResponseJson.isBlank()) {
             log.error("Planner agent returned an empty or null response.");
             return "{\"error\": \"Planner agent failed to return a response.\"}";
@@ -93,28 +69,29 @@ public class ItineraryService {
         String validatorPrompt = buildValidatorPrompt(plannerResponseJson);
 
         // Step 4: Call the Validator Agent
-        String finalJsonResponse = callAiModel(validatorPrompt, validatorKeys);
+        String finalJsonResponse;
+        try {
+            finalJsonResponse = geminiClient.generateContent(validatorPrompt, GeminiTask.VALIDATOR);
+        } catch (Exception e) {
+            log.warn("Validator agent failed: {}. Using planner response as fallback.", e.getMessage());
+            finalJsonResponse = null;
+        }
+
+        // If validator fails, retry validator once. If still fails, use original planner response as fallback.
         if (finalJsonResponse == null || finalJsonResponse.isBlank()) {
-            log.warn("Validator agent returned empty response. Recalling planner once and retrying validator once.");
-
-            String plannerRetryResponse = callAiModel(plannerPrompt, plannerKeys);
-            if (plannerRetryResponse != null && !plannerRetryResponse.isBlank()) {
-                String validatorRetryPrompt = buildValidatorPrompt(plannerRetryResponse);
-                String validatorRetryResponse = callAiModel(validatorRetryPrompt, validatorKeys);
-
-                if (validatorRetryResponse != null && !validatorRetryResponse.isBlank()) {
-                    finalJsonResponse = validatorRetryResponse;
-                    log.info("Validator retry succeeded after planner recall.");
-                } else {
-                    finalJsonResponse = plannerRetryResponse;
-                    log.warn("Validator retry failed; using planner recall response as fallback.");
+            log.warn("Validator agent returned empty response. Retrying validator once.");
+            try {
+                finalJsonResponse = geminiClient.generateContent(validatorPrompt, GeminiTask.VALIDATOR);
+                if (finalJsonResponse == null || finalJsonResponse.isBlank()) {
+                    log.warn("Validator retry also failed; using planner response as fallback.");
+                    finalJsonResponse = plannerResponseJson;
                 }
-            } else {
-                log.warn("Planner recall also failed; using original planner response as fallback.");
+            } catch (Exception e) {
+                log.warn("Validator retry failed: {}. Using planner response as fallback.", e.getMessage());
                 finalJsonResponse = plannerResponseJson;
             }
         } else {
-            log.info("Validator Agent responded.");
+            log.info("Validator Agent responded successfully.");
         }
 
         // Step 5: Return initial itinerary without embedded alternatives.
@@ -125,71 +102,17 @@ public class ItineraryService {
         return injectImagesIntoItinerary(itineraryWithoutAlternatives);
     }
 
-    private String callAiModel(String prompt, Queue<String> apiKeys) {
-        if (apiKeys.isEmpty()) {
-            log.error("Gemini API keys are not configured. Please check your application.yaml.");
-            return null; // Return null instead of JSON error so callers can fallback if needed
-        }
-
-        int attempts = apiKeys.size();
-        for (int i = 0; i < attempts; i++) {
-            String apiKey = apiKeys.poll();
-            if (apiKey == null) break;
-
-            String url = geminiApiUrl + "?key=" + apiKey;
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            GeminiRequest.Content content = new GeminiRequest.Content(Collections.singletonList(new GeminiRequest.Part(prompt)));
-            GeminiRequest requestBody = new GeminiRequest(Collections.singletonList(content));
-
-            HttpEntity<GeminiRequest> entity = new HttpEntity<>(requestBody, headers);
-
-            try {
-                ResponseEntity<GeminiResponse> response = restTemplate.postForEntity(url, entity, GeminiResponse.class);
-
-                String result = Optional.ofNullable(response.getBody())
-                        .flatMap(body -> body.getCandidates().stream().findFirst())
-                        .map(GeminiResponse.Candidate::getContent)
-                        .map(GeminiResponse.Content::getParts)
-                        .flatMap(parts -> parts.stream().findFirst())
-                        .map(GeminiResponse.Part::getText)
-                        .map(this::cleanApiResponse)
-                        .orElse(null);
-
-                if (result != null && !result.isBlank()) {
-                    // Success! Push to back of queue and return
-                    apiKeys.offer(apiKey);
-                    return result;
-                } else {
-                    log.warn("Gemini API returned empty response, trying next key...");
-                }
-
-            } catch (RestClientException e) {
-                log.warn("Error calling Gemini API, trying next key...", e);
-            }
-
-            // Push to back of queue to preserve the key for future calls even if it failed (e.g. rate limit)
-            apiKeys.offer(apiKey);
-        }
-
-        log.error("All Gemini API keys exhausted or failed for this request.");
-        return null;
-    }
-
     /**
      * Call Gemini API for generating activity alternatives.
-     * Uses the planner keys for consistency but marked as a lighter request.
+     * Uses AUXILIARY task type for consistency with the new key pool design.
      */
     public String callAiModelForAlternatives(String prompt) {
         log.info("Calling Gemini API for activity alternatives generation...");
-        return callAiModel(prompt, plannerKeys);
-    }
-
-    private void warnIfUnexpectedPoolSize(String poolName, Queue<String> keys, int expectedSize) {
-        if (keys.size() != expectedSize) {
-            log.warn("Gemini {} key pool size is {} (expected {}). Running in warning mode.", poolName, keys.size(), expectedSize);
+        try {
+            return geminiClient.generateContent(prompt, GeminiTask.AUXILIARY);
+        } catch (Exception e) {
+            log.error("Error calling Gemini API for alternatives: {}", e.getMessage());
+            return null;
         }
     }
 

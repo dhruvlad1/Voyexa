@@ -4,37 +4,24 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.voyexa.backend.DTOS.DestinationDto;
+import com.voyexa.backend.services.gemini.GeminiClient;
+import com.voyexa.backend.services.gemini.GeminiTask;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Service
 public class DashboardService {
 
     private static final Logger log = LoggerFactory.getLogger(DashboardService.class);
-    private static final int EXPECTED_PLANNER_KEYS = 4;
 
-    private final RestTemplate restTemplate;
-    private final Queue<String> plannerKeys = new ConcurrentLinkedQueue<>();
-    private final String geminiApiUrl;
+    private final GeminiClient geminiClient;
     private final ObjectMapper objectMapper;
 
     // Cache to avoid spamming the Gemini API
@@ -58,19 +45,8 @@ public class DashboardService {
             "https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&q=80&w=400"
     );
 
-    public DashboardService(
-            @Value("${gemini.api.planner-key}") String plannerApiKeyStr,
-            @Value("${gemini.api.url}") String geminiApiUrl
-    ) {
-        this.restTemplate = new RestTemplate();
-        if (plannerApiKeyStr != null) {
-            Arrays.stream(plannerApiKeyStr.split(","))
-                    .map(String::trim)
-                    .filter(k -> !k.isEmpty() && !k.startsWith("YOUR_"))
-                    .forEach(plannerKeys::offer);
-        }
-        warnIfUnexpectedPoolSize("planner", plannerKeys, EXPECTED_PLANNER_KEYS);
-        this.geminiApiUrl = geminiApiUrl;
+    public DashboardService(GeminiClient geminiClient) {
+        this.geminiClient = geminiClient;
         this.objectMapper = new ObjectMapper();
         loadCacheFromFile();
     }
@@ -167,97 +143,15 @@ public class DashboardService {
     }
 
     private String callAiModel(String prompt) {
-        if (plannerKeys.isEmpty()) {
-            log.error("Gemini API keys are not configured.");
+        log.info("Calling Gemini API for trending destinations...");
+        try {
+            return geminiClient.generateContent(prompt, GeminiTask.AUXILIARY);
+        } catch (Exception e) {
+            log.error("Error calling Gemini API for trending destinations: {}", e.getMessage());
             return null;
         }
-
-        int attempts = plannerKeys.size();
-        for (int i = 0; i < attempts; i++) {
-            String apiKey = plannerKeys.poll();
-            if (apiKey == null) break;
-
-            String url = geminiApiUrl + "?key=" + apiKey;
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            GeminiRequest.Content content = new GeminiRequest.Content(Collections.singletonList(new GeminiRequest.Part(prompt)));
-            GeminiRequest requestBody = new GeminiRequest(Collections.singletonList(content));
-            HttpEntity<GeminiRequest> entity = new HttpEntity<>(requestBody, headers);
-
-            try {
-                ResponseEntity<GeminiResponse> response = restTemplate.postForEntity(url, entity, GeminiResponse.class);
-
-                String result = Optional.ofNullable(response.getBody())
-                        .flatMap(body -> body.getCandidates().stream().findFirst())
-                        .map(GeminiResponse.Candidate::getContent)
-                        .map(GeminiResponse.Content::getParts)
-                        .flatMap(parts -> parts.stream().findFirst())
-                        .map(GeminiResponse.Part::getText)
-                        .map(this::cleanApiResponse)
-                        .orElse(null);
-
-                if (result != null && !result.isBlank()) {
-                    // Success! Push to back of queue and return
-                    plannerKeys.offer(apiKey);
-                    return result;
-                } else {
-                    log.warn("Gemini API returned empty response, trying next key...");
-                }
-
-            } catch (RestClientException e) {
-                log.warn("Error calling Gemini API: {}, trying next key...", e.getMessage());
-            }
-            
-            // Push to back of queue to preserve the key for future calls even if it failed (e.g. rate limit)
-            plannerKeys.offer(apiKey);
-        }
-        
-        log.error("All Gemini API keys exhausted or failed for this request.");
-        return null;
     }
 
-    private void warnIfUnexpectedPoolSize(String poolName, Queue<String> keys, int expectedSize) {
-        if (keys.size() != expectedSize) {
-            log.warn("Gemini {} key pool size is {} (expected {}). Running in warning mode.", poolName, keys.size(), expectedSize);
-        }
-    }
-
-    private String cleanApiResponse(String rawText) {
-        return rawText.replace("```json", "").replace("```", "").trim();
-    }
-
-    @Getter
-    private static class GeminiRequest {
-        private final List<Content> contents;
-        public GeminiRequest(List<Content> contents) { this.contents = contents; }
-        private static class Content {
-            private final List<Part> parts;
-            public Content(List<Part> parts) { this.parts = parts; }
-            public List<Part> getParts() { return parts; }
-        }
-        @Getter
-        private static class Part {
-            private final String text;
-            public Part(String text) { this.text = text; }
-        }
-    }
-
-    @Setter
-    @Getter
-    private static class GeminiResponse {
-        private List<Candidate> candidates;
-        @Setter
-        @Getter
-        private static class Candidate { private Content content; }
-        @Setter
-        @Getter
-        private static class Content { private List<Part> parts; }
-        @Setter
-        @Getter
-        private static class Part { private String text; }
-    }
-    
     @Getter
     @Setter
     public static class CachedData {
