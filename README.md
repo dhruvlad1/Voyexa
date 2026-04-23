@@ -3,10 +3,10 @@
 
 ---
 
-> **Institution:** [Your Institution Name]
-> **Department:** [Your Department]
+  > **Institution:** Veermata Jijabai Technological Institute
+> **Department:** Computer Engineering
 > **Academic Year:** 2025–2026
-> **Submission Date:** April 2026
+> **Submission Date:** 24th April 2026
 
 ---
 
