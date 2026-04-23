@@ -62,8 +62,6 @@ Voyexa is designed not just to generate trips, but to understand *people* — th
 | 2 | Dhruv Lad   | Frontend Developer | React UI, multi-step trip wizard, routing |
 
 
-> *Replace the placeholders above with your actual team member names and details.*
-
 ### Supervisor / Guide
 
 | **Name**       | **Designation** | **Department**       |
@@ -72,7 +70,6 @@ Voyexa is designed not just to generate trips, but to understand *people* — th
 
 ### Contact Information
 
-- **Project Repository:** `d:\PROJECTS\Voyexa`
 - **Application Name:** Voyexa
 - **Primary Language Stack:** Java (Spring Boot) + JavaScript (React + Vite)
 
