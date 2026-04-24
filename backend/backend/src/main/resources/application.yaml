@@ -12,11 +12,9 @@ spring:
 
   jpa:
     show-sql: true
+    open-in-view: false
     hibernate:
       ddl-auto: update
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
 
 geoapify:
   base-url: https://api.geoapify.com/v1/geocode/autocomplete
