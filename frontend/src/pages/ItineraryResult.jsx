@@ -82,21 +82,46 @@ const ItineraryResult = () => {
         }
 
         if (needsImages) {
+            let cancelled = false;
             setIsInjectingImages(true);
-            fetch(`${API}/api/trips/inject-images`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(itineraryData)
-            })
-            .then(res => res.json())
-            .then(data => {
-                setItineraryData(data);
-                setIsInjectingImages(false);
-            })
-            .catch(err => {
-                console.error("Failed to inject images", err);
-                setIsInjectingImages(false);
+            streamImageUpdates(
+                itineraryData,
+                (update) => {
+                    if (cancelled) return;
+                    setItineraryData((prev) => applyImageUpdate(prev, update));
+                },
+                () => {
+                    if (cancelled) return;
+                    setIsInjectingImages(false);
+                }
+            ).catch(async (streamError) => {
+                if (cancelled) return;
+                console.warn("Streaming image injection failed, falling back to bulk endpoint", streamError);
+                try {
+                    const response = await fetch(`${API}/api/trips/inject-images`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(itineraryData)
+                    });
+                    if (!response.ok) {
+                        throw new Error(`Image injection failed: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    if (!cancelled) {
+                        setItineraryData(data);
+                    }
+                } catch (err) {
+                    console.error("Failed to inject images", err);
+                } finally {
+                    if (!cancelled) {
+                        setIsInjectingImages(false);
+                    }
+                }
             });
+
+            return () => {
+                cancelled = true;
+            };
         }
     }, [itineraryJson]);
 
@@ -978,6 +1003,112 @@ const ItineraryResult = () => {
             </div>
         </div>
     );
+};
+
+const streamImageUpdates = async (itineraryData, onUpdate, onComplete) => {
+    const response = await fetch(`${API}/api/trips/inject-images-stream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(itineraryData)
+    });
+
+    if (!response.ok) {
+        throw new Error(`Image stream failed: ${response.status}`);
+    }
+    if (!response.body) {
+        throw new Error('Streaming response body is not available');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
+        let boundary = buffer.indexOf("\n\n");
+        while (boundary !== -1) {
+            const block = buffer.slice(0, boundary).trim();
+            buffer = buffer.slice(boundary + 2);
+            boundary = buffer.indexOf("\n\n");
+            if (!block) continue;
+
+            const { eventName, payload } = parseSseBlock(block);
+            if (eventName === "image-update" && payload) {
+                onUpdate(payload);
+            } else if (eventName === "error") {
+                throw new Error(payload?.message || "Failed to stream image updates");
+            } else if (eventName === "complete") {
+                onComplete();
+                await reader.cancel();
+                return;
+            }
+        }
+    }
+
+    onComplete();
+};
+
+const parseSseBlock = (block) => {
+    const lines = block.split(/\r?\n/);
+    let eventName = "message";
+    const dataLines = [];
+
+    for (const line of lines) {
+        if (line.startsWith("event:")) {
+            eventName = line.slice(6).trim();
+        } else if (line.startsWith("data:")) {
+            dataLines.push(line.slice(5).trim());
+        }
+    }
+
+    const rawData = dataLines.join("\n");
+    if (!rawData) {
+        return { eventName, payload: null };
+    }
+    try {
+        return { eventName, payload: JSON.parse(rawData) };
+    } catch {
+        return { eventName, payload: { message: rawData } };
+    }
+};
+
+const applyImageUpdate = (itineraryData, update) => {
+    if (!itineraryData || !Array.isArray(itineraryData.itinerary)) {
+        return itineraryData;
+    }
+
+    const dayNumber = Number(update?.dayNumber);
+    const timeSlot = update?.timeSlot;
+    const imageUrl = update?.imageUrl;
+    if (!dayNumber || !timeSlot || typeof imageUrl !== "string" || !imageUrl.trim()) {
+        return itineraryData;
+    }
+
+    const next = JSON.parse(JSON.stringify(itineraryData));
+    const day = next.itinerary.find((entry) => Number(entry?.dayNumber) === dayNumber);
+    if (!day || !day[timeSlot]) {
+        return itineraryData;
+    }
+
+    const alternativeIndex = update?.alternativeIndex;
+    if (alternativeIndex !== undefined && alternativeIndex !== null) {
+        const alternatives = day[timeSlot].alternatives;
+        if (Array.isArray(alternatives) && alternatives[alternativeIndex]?.activity) {
+            alternatives[alternativeIndex].activity.imageUrl = imageUrl;
+            return next;
+        }
+        return itineraryData;
+    }
+
+    if (day[timeSlot].activity) {
+        day[timeSlot].activity.imageUrl = imageUrl;
+        return next;
+    }
+
+    return itineraryData;
 };
 
 export default ItineraryResult;

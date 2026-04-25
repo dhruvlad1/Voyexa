@@ -6,6 +6,11 @@ import com.voyexa.backend.DTOS.PlaceDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
@@ -48,7 +53,11 @@ public class ExternalPlaceService {
 
         try {
             // General Autocomplete Search without strict type filters
-            return fetchAndParse(query, 6);
+            List<PlaceDto> geoapifyResults = fetchAndParse(query, 6);
+            if (!geoapifyResults.isEmpty()) {
+                return geoapifyResults;
+            }
+            return fetchFromNominatim(query, 6);
         } catch (Exception e) {
             log.error("Unexpected error in searchPlaces", e);
             return List.of();
@@ -74,6 +83,33 @@ public class ExternalPlaceService {
             return List.of();
         } catch (Exception e) {
             log.error("Error fetching/parsing Geoapify data", e);
+            return List.of();
+        }
+    }
+
+    private List<PlaceDto> fetchFromNominatim(String query, int limit) {
+        try {
+            URI uri = UriComponentsBuilder
+                    .fromUriString("https://nominatim.openstreetmap.org/search")
+                    .queryParam("q", query.trim())
+                    .queryParam("format", "jsonv2")
+                    .queryParam("limit", limit)
+                    .build(true)
+                    .toUri();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+            headers.set("User-Agent", "Voyexa/1.0 (Location search)");
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    uri,
+                    HttpMethod.GET,
+                    new HttpEntity<>(headers),
+                    String.class
+            );
+            return parseNominatimResponse(response.getBody());
+        } catch (Exception e) {
+            log.warn("Error calling Nominatim fallback API: {}", e.getMessage());
             return List.of();
         }
     }
@@ -131,5 +167,55 @@ public class ExternalPlaceService {
             log.warn("Error parsing Geoapify response: {}", e.getMessage());
             return List.of();
         }
+    }
+
+    private List<PlaceDto> parseNominatimResponse(String jsonResponse) {
+        List<PlaceDto> results = new ArrayList<>();
+        if (jsonResponse == null || jsonResponse.trim().isEmpty()) {
+            return results;
+        }
+
+        try {
+            JsonNode places = objectMapper.readTree(jsonResponse);
+            if (!places.isArray()) {
+                return results;
+            }
+
+            for (JsonNode place : places) {
+                String displayName = place.path("display_name").asText("").trim();
+                if (displayName.isEmpty()) {
+                    continue;
+                }
+
+                JsonNode address = place.path("address");
+                String country = address.path("country").asText("");
+                String city = firstNonBlank(
+                        address.path("city").asText(""),
+                        address.path("town").asText(""),
+                        address.path("village").asText(""),
+                        address.path("state").asText("")
+                );
+
+                PlaceDto dto = new PlaceDto();
+                dto.setDescription(displayName);
+                dto.setName(city.isBlank() ? displayName : city);
+                dto.setCountry(country.isBlank() ? null : country);
+                results.add(dto);
+            }
+
+            return results;
+        } catch (Exception e) {
+            log.warn("Error parsing Nominatim response: {}", e.getMessage());
+            return List.of();
+        }
+    }
+
+    private String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return "";
     }
 }

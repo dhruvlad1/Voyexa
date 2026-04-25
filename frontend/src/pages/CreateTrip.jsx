@@ -17,7 +17,7 @@ import {
     X
 } from "lucide-react";
 
-const API = import.meta.env.VITE_API_URL;
+const API = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 const LocationAutocomplete = ({
     icon: Icon,

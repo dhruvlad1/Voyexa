@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -96,9 +98,7 @@ public class ItineraryService {
         // Step 5: Return initial itinerary without embedded alternatives.
         String itineraryWithoutAlternatives = stripAlternativesFromItinerary(finalJsonResponse);
 
-        // Step 6: Asynchronously fetch and inject Pexels images for each activity tree
-        log.info("Injecting dynamic images from Pexels...");
-        return injectImagesIntoItinerary(itineraryWithoutAlternatives);
+        return itineraryWithoutAlternatives;
     }
 
     /**
@@ -204,6 +204,88 @@ public class ItineraryService {
         } catch (Exception e) {
             log.error("Failed to inject images into itinerary JSON", e);
             return json;
+        }
+    }
+
+    public void streamImageUpdates(String json, Consumer<ImageUpdate> updateConsumer) {
+        if (updateConsumer == null) {
+            return;
+        }
+        try {
+            JsonNode root = objectMapper.readTree(json);
+            JsonNode itineraryArray = root.path("itinerary");
+            if (!itineraryArray.isArray()) {
+                return;
+            }
+
+            List<CompletableFuture<Void>> futures = new ArrayList<>();
+
+            for (JsonNode dayNode : itineraryArray) {
+                int dayNumber = dayNode.path("dayNumber").asInt(0);
+                if (dayNumber <= 0) {
+                    continue;
+                }
+                String[] times = {"morning", "afternoon", "evening"};
+                for (String time : times) {
+                    JsonNode timeNode = dayNode.path(time);
+                    if (!timeNode.isObject()) {
+                        continue;
+                    }
+
+                    JsonNode activityNode = timeNode.path("activity");
+                    if (activityNode.isObject()) {
+                        String title = activityNode.path("title").asText("");
+                        String location = activityNode.path("location").asText("");
+                        String imageQuery = extractImageQuery(activityNode, title, location);
+                        if (!imageQuery.isEmpty()) {
+                            futures.add(CompletableFuture.runAsync(() -> {
+                                String imageUrl = pexelsImageService.fetchImageForActivity(imageQuery, location);
+                                updateConsumer.accept(new ImageUpdate(dayNumber, time, null, imageUrl));
+                            }));
+                        }
+                    }
+
+                    JsonNode alternativesNode = timeNode.path("alternatives");
+                    if (alternativesNode.isArray()) {
+                        for (int i = 0; i < alternativesNode.size(); i++) {
+                            JsonNode altNode = alternativesNode.get(i);
+                            JsonNode altActivityNode = altNode.path("activity");
+                            if (!altActivityNode.isObject()) {
+                                continue;
+                            }
+                            String altTitle = altActivityNode.path("title").asText("");
+                            String altLocation = altActivityNode.path("location").asText("");
+                            String altImageQuery = extractImageQuery(altActivityNode, altTitle, altLocation);
+                            if (!altImageQuery.isEmpty()) {
+                                int alternativeIndex = i;
+                                futures.add(CompletableFuture.runAsync(() -> {
+                                    String imageUrl = pexelsImageService.fetchImageForActivity(altImageQuery, altLocation);
+                                    updateConsumer.accept(new ImageUpdate(dayNumber, time, alternativeIndex, imageUrl));
+                                }));
+                            }
+                        }
+                    }
+                }
+            }
+
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        } catch (Exception e) {
+            log.error("Failed to stream image updates", e);
+        }
+    }
+
+    @Getter
+    public static class ImageUpdate {
+        private final int dayNumber;
+        private final String timeSlot;
+        private final Integer alternativeIndex;
+        private final String imageUrl;
+
+        public ImageUpdate(int dayNumber, String timeSlot, Integer alternativeIndex, String imageUrl) {
+            this.dayNumber = dayNumber;
+            this.timeSlot = timeSlot;
+            this.alternativeIndex = alternativeIndex;
+            this.imageUrl = imageUrl;
         }
     }
 

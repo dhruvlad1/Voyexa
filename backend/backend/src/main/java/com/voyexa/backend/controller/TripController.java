@@ -20,8 +20,10 @@ import com.voyexa.backend.services.OnDemandAlternativeService;
 import com.voyexa.backend.services.TripService;
 import com.voyexa.backend.services.TripShareService;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.bind.annotation.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -29,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/trips")
@@ -74,8 +77,7 @@ public class TripController {
         // 1. Persist user trip preferences and retrieve the saved trip's ID.
         TripResponseDto savedTrip = tripService.createTripFromGenerationRequest(dto);
 
-        // 2. Generate the itinerary JSON (with images injected for the frontend to
-        // display).
+        // 2. Generate the base itinerary JSON first (without image URLs).
         String itineraryJson = itineraryService.generateItinerary(dto);
 
         // 3. Return both tripId + itineraryJson so the frontend can display the result
@@ -95,6 +97,50 @@ public class TripController {
             return ResponseEntity.ok(responseMap);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping(value = "/inject-images-stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter injectImagesStream(@RequestBody Map<String, Object> itineraryMap) {
+        SseEmitter emitter = new SseEmitter(0L);
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                String jsonStr = mapper.writeValueAsString(itineraryMap);
+                sendSse(emitter, "status", Map.of("message", "Generating activity images"));
+
+                itineraryService.streamImageUpdates(jsonStr, imageUpdate -> {
+                    Map<String, Object> payload = new HashMap<>();
+                    payload.put("dayNumber", imageUpdate.getDayNumber());
+                    payload.put("timeSlot", imageUpdate.getTimeSlot());
+                    payload.put("imageUrl", imageUpdate.getImageUrl());
+                    if (imageUpdate.getAlternativeIndex() != null) {
+                        payload.put("alternativeIndex", imageUpdate.getAlternativeIndex());
+                    }
+                    sendSseUnchecked(emitter, "image-update", payload);
+                });
+
+                sendSse(emitter, "complete", Map.of("done", true));
+                emitter.complete();
+            } catch (Exception e) {
+                sendSseUnchecked(emitter, "error", Map.of("message", "Failed to inject images."));
+                emitter.complete();
+            }
+        });
+
+        return emitter;
+    }
+
+    private void sendSse(SseEmitter emitter, String eventName, Map<String, Object> payload) throws java.io.IOException {
+        emitter.send(SseEmitter.event().name(eventName).data(payload, MediaType.APPLICATION_JSON));
+    }
+
+    private void sendSseUnchecked(SseEmitter emitter, String eventName, Map<String, Object> payload) {
+        try {
+            sendSse(emitter, eventName, payload);
+        } catch (Exception ignored) {
+            // Client may disconnect while streaming.
         }
     }
 
